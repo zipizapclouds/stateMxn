@@ -138,6 +138,23 @@ func (smg *StateMxnGeneric) Change(nextStateName string) error {
 	return nil
 }
 
+func (smg *StateMxnGeneric) IsNow(stateNameRegexp string) bool {
+	// return true if currentState.Name() matches regular expression of stateNameRegexp
+
+}
+
+func (smg *StateMxnGeneric) TransitionsMap() map[string][]string {
+	return smg.transitionsMap
+}
+func (smg *StateMxnGeneric) CurrentState() *State {
+	return smg.currentState
+}
+
+// NOTE: historyOfStates[-1] == currentState
+func (smg *StateMxnGeneric) HistoryOfStates() []*State {
+	return smg.historyOfStates
+}
+
 // Returns if stateName is a valid source or destination state (ie, either in the transitions map keys or in the transitions map values)
 func (smg *StateMxnGeneric) verifyIfValidStatename(stateName string) error {
 	// Check if stateName is in the transitions map keys
@@ -213,16 +230,4 @@ func (smg *StateMxnGeneric) getStatecopyFromPrecreatedstatesOrNew(stateName stri
 		stateCopy := state.deepcopy()
 		return stateCopy, nil
 	}
-}
-
-func (smg *StateMxnGeneric) TransitionsMap() map[string][]string {
-	return smg.transitionsMap
-}
-func (smg *StateMxnGeneric) CurrentState() *State {
-	return smg.currentState
-}
-
-// NOTE: historyOfStates[-1] == currentState
-func (smg *StateMxnGeneric) HistoryOfStates() []*State {
-	return smg.historyOfStates
 }
