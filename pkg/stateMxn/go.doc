@@ -1,18 +1,13 @@
-package main
+package stateMxn
+/*
+USAGE:
+    // EXAMPLE1: basic
 
-import (
-	"fmt"
-	"log"
-
-	"github.com/zipizapclouds/stateMxn/pkg/stateMxn"
-)
-
-func stateMxnGeneric_example1() {
 	// ===== States and Tansitions =====
 	// Init
 	//   |--> Running
 	//           |------------> FinishedOk
-	//		     |------------> FinishedNok
+	//           |------------> FinishedNok
 	//   |--------------------> FinishedNok
 
 	// Create a StateMxnGeneric
@@ -48,14 +43,17 @@ func stateMxnGeneric_example1() {
 	fmt.Println("currentStateName:", currentStateName) // "FinishedOk"
 
 	// Check if current state matches any ^Finished state
-	isFinished, err := smg.CurrentState().Is("^Finished")
+	isFinished, err := smg.CurrentState().Matches("^Finished")
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("isFinished:", isFinished) // true
-}
 
-func stateMxnGeneric_example2() {
+
+*/
+/*
+    // EXAMPLE2: mutiple states 
+    //
 	// ===== States and Tansitions =====
 	// Init_TriggerA -------+-> Running_ProcessZeta -----> Running_ProcessTau  ---------> FinishedOk
 	//  | Init_TriggerB ---/      |                          |
@@ -104,8 +102,4 @@ func stateMxnGeneric_example2() {
 	fmt.Println("currentStateName:", smg.CurrentState().Name()) // "FinishedOk"
 	isInit, isRunning, isFinished = f()
 	fmt.Printf("isInit: %v, isRunning: %v, isFinished: %v\n", isInit, isRunning, isFinished) // false, false, true
-}
-
-func main() {
-	stateMxnGeneric_example2()
-}
+*/

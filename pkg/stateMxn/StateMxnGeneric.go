@@ -6,48 +6,6 @@ import (
 	"github.com/davecgh/go-spew/spew"
 )
 
-/*
-USAGE:
-
-	// ===== States and Tansitions =====
-	// Init
-	//   |--> Running
-	//           |------------> FinishedOk
-	//		     |------------> FinishedNok
-	//   |--------------------> FinishedNok
-
-	// Create a StateMxnGeneric
-	transitionsMap := map[string][]string{
-		"Init":    {"Running", "FinishedNok"},
-		"Running": {"FinishedOk", "FinishedNok"},
-	}
-	initialStateName := "Init"
-	smg, err := stateMxn.NewStateMxnGeneric(transitionsMap, initialStateName, nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	// Get current state name
-	currentStateName := smg.CurrentState().Name()
-	fmt.Println("currentStateName:", currentStateName) // "Init"
-
-	// Change state
-	err = smg.Change("Running")
-	if err != nil {
-		log.Fatal(err)
-	}
-	// Get current state name
-	currentStateName = smg.CurrentState().Name()
-	fmt.Println("currentStateName:", currentStateName) // "Running"
-
-	// Change state
-	err = smg.Change("FinishedOk")
-	if err != nil {
-		log.Fatal(err)
-	}
-	// Get current state name
-	currentStateName = smg.CurrentState().Name()
-	fmt.Println("currentStateName:", currentStateName) // "FinishedOk"
-*/
 type StateMxnGeneric struct {
 	transitionsMap   map[string][]string
 	precreatedStates map[string]*State
@@ -88,7 +46,7 @@ func (smg *StateMxnGeneric) Change(nextStateName string) error {
 	// Performs safety-validations:
 	// - check if its valid the transition change from currentState to nextStateName
 	//
-	// and execute the change, updating currentState and historyOfStates, by:
+	// and execute the change, updating currentState, historyOfStates and possibly precreatedStates, by:
 	// - creating a nextState, from a copy-or-a-new-state in precreatedStates
 	// - appending nextState to historyOfStates
 	// - setting currentState = nextState
@@ -138,9 +96,18 @@ func (smg *StateMxnGeneric) Change(nextStateName string) error {
 	return nil
 }
 
-func (smg *StateMxnGeneric) IsNow(stateNameRegexp string) bool {
-	// return true if currentState.Name() matches regular expression of stateNameRegexp
-
+// Is returns true if the smg.CurrentState.Name() matches the given regexp
+//
+// currentStateNameRegexp - is a regexp RE2 as described at https://golang.org/s/re2syntax
+// the same as used by regexp.MatchString()
+//
+// Examples:
+//   - regexp "Init" 						matches Name "Init"
+//   - regexp "Init|Running" 				matches Name "Init"
+//   - regexp "Init|Running|FinishedOk" 	matches Name "Init"
+//   - regexp "Finished" 					matches Name "FinisedOk" or "FinishedNok"
+func (smg *StateMxnGeneric) Is(currentStateNameRegexp string) (bool, error) {
+	return smg.CurrentState().Is(currentStateNameRegexp)
 }
 
 func (smg *StateMxnGeneric) TransitionsMap() map[string][]string {
