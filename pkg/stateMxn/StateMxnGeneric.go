@@ -7,12 +7,15 @@ import (
 )
 
 type StateMxnGeneric struct {
-	transitionsMap   map[string][]string
+	transitionsMap map[string][]string
+
+	// map[<statename>]*State
 	precreatedStates map[string]*State
 	currentState     *State
 	historyOfStates  []*State
 }
 
+// precreatedStates can be nil
 func NewStateMxnGeneric(transitionsMap map[string][]string, initialStateName string, precreatedStates map[string]*State) (*StateMxnGeneric, error) {
 	smg := &StateMxnGeneric{}
 
@@ -70,12 +73,12 @@ func (smg *StateMxnGeneric) Change(nextStateName string) error {
 			// we accept any nextStateName as valid
 		} else {
 			// -- check if currentState is a valid sourcestate
-			err = smg.verifyIfValidSourcestate(smg.currentState.Name())
+			err = smg.verifyIfValidSourcestate(smg.currentState.GetName())
 			if err != nil {
 				return err
 			}
 			// -- check if nextState is a valid destinationstate, from currentState
-			err = smg.verifyIfValidTransition(smg.currentState.Name(), nextStateName)
+			err = smg.verifyIfValidTransition(smg.currentState.GetName(), nextStateName)
 			if err != nil {
 				return err
 			}
@@ -107,18 +110,18 @@ func (smg *StateMxnGeneric) Change(nextStateName string) error {
 //   - regexp "Init|Running|FinishedOk" 	matches Name "Init"
 //   - regexp "Finished" 					matches Name "FinisedOk" or "FinishedNok"
 func (smg *StateMxnGeneric) Is(currentStateNameRegexp string) (bool, error) {
-	return smg.CurrentState().Is(currentStateNameRegexp)
+	return smg.GetCurrentState().Is(currentStateNameRegexp)
 }
 
-func (smg *StateMxnGeneric) TransitionsMap() map[string][]string {
+func (smg *StateMxnGeneric) GetTransitionsMap() map[string][]string {
 	return smg.transitionsMap
 }
-func (smg *StateMxnGeneric) CurrentState() *State {
+func (smg *StateMxnGeneric) GetCurrentState() *State {
 	return smg.currentState
 }
 
 // NOTE: historyOfStates[-1] == currentState
-func (smg *StateMxnGeneric) HistoryOfStates() []*State {
+func (smg *StateMxnGeneric) GetHistoryOfStates() []*State {
 	return smg.historyOfStates
 }
 

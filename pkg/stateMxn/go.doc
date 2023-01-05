@@ -21,7 +21,7 @@ USAGE:
 		log.Fatal(err)
 	}
 	// Get current state name
-	currentStateName := smg.CurrentState().Name()
+	currentStateName := smg.GetCurrentState().GetName()
 	fmt.Println("currentStateName:", currentStateName) // "Init"
 
 	// Change state
@@ -30,7 +30,7 @@ USAGE:
 		log.Fatal(err)
 	}
 	// Get current state name
-	currentStateName = smg.CurrentState().Name()
+	currentStateName = smg.GetCurrentState().GetName()
 	fmt.Println("currentStateName:", currentStateName) // "Running"
 
 	// Change state
@@ -39,11 +39,11 @@ USAGE:
 		log.Fatal(err)
 	}
 	// Get current state name
-	currentStateName = smg.CurrentState().Name()
+	currentStateName = smg.GetCurrentState().GetName()
 	fmt.Println("currentStateName:", currentStateName) // "FinishedOk"
 
 	// Check if current state matches any ^Finished state
-	isFinished, err := smg.CurrentState().Matches("^Finished")
+	isFinished, err := smg.GetCurrentState().Matches("^Finished")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -78,7 +78,7 @@ USAGE:
 	}
 	initialStateName := "Init_TriggerB"
 	smg, _ := stateMxn.NewStateMxnGeneric(transitionsMap, initialStateName, nil)
-	fmt.Println("currentStateName:", smg.CurrentState().Name()) // "Init_TriggerB"
+	fmt.Println("currentStateName:", smg.GetCurrentState().GetName()) // "Init_TriggerB"
 	f := func() (isInit, isRunning, isFinished bool) {
 		isInit, _ = smg.Is("^Init")
 		isRunning, _ = smg.Is("^Running")
@@ -89,17 +89,17 @@ USAGE:
 	fmt.Printf("isInit: %v, isRunning: %v, isFinished: %v\n", isInit, isRunning, isFinished) // true, false, false
 
 	_ = smg.Change("Running_ProcessZeta")
-	fmt.Println("currentStateName:", smg.CurrentState().Name()) // "Running_ProcessZeta"
+	fmt.Println("currentStateName:", smg.GetCurrentState().GetName()) // "Running_ProcessZeta"
 	isInit, isRunning, isFinished = f()
 	fmt.Printf("isInit: %v, isRunning: %v, isFinished: %v\n", isInit, isRunning, isFinished) // false, true, false
 
 	_ = smg.Change("Running_ProcessTau")
-	fmt.Println("currentStateName:", smg.CurrentState().Name()) // "Running_ProcessTau"
+	fmt.Println("currentStateName:", smg.GetCurrentState().GetName()) // "Running_ProcessTau"
 	isInit, isRunning, isFinished = f()
 	fmt.Printf("isInit: %v, isRunning: %v, isFinished: %v\n", isInit, isRunning, isFinished) // false, true, false
 
 	_ = smg.Change("FinishedOk")
-	fmt.Println("currentStateName:", smg.CurrentState().Name()) // "FinishedOk"
+	fmt.Println("currentStateName:", smg.GetCurrentState().GetName()) // "FinishedOk"
 	isInit, isRunning, isFinished = f()
 	fmt.Printf("isInit: %v, isRunning: %v, isFinished: %v\n", isInit, isRunning, isFinished) // false, false, true
 */
