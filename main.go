@@ -124,11 +124,29 @@ func stateMxnGeneric_example3() {
 	}
 	initialStateName := "Init"
 
-	runningState := stateMxn.NewState("Running", nil)
-	precreatedStates := map[string]stateMxn.State{
+	// When the statemachine changes to a state containing handlers, the handlers are called
+	// So lets pre-create the states objects to add handlers to them
+	runningState := stateMxn.NewState("Running")
+	runningState.AddHandlerBegin(
+		func(inputs stateMxn.StateInputs, outputs stateMxn.StateOutputs, data stateMxn.StateData) error {
+			fmt.Println("+ inside runningState handlerBegin")
+			return nil
+		})
+	runningState.AddHandlerExec(
+		func(inputs stateMxn.StateInputs, outputs stateMxn.StateOutputs, data stateMxn.StateData) error {
+			fmt.Println("+ inside runningState handlerExec")
+			return nil
+		})
+	runningState.AddHandlerEnd(
+		func(inputs stateMxn.StateInputs, outputs stateMxn.StateOutputs, data stateMxn.StateData) error {
+			fmt.Println("+ inside runningState handlerEnd")
+			return nil
+		})
+
+	precreatedStates := map[string]*stateMxn.State{
 		"Running": runningState,
 	}
-	smg, err := stateMxn.NewStateMxnGeneric(transitionsMap, initialStateName, nil)
+	smg, err := stateMxn.NewStateMxnGeneric(transitionsMap, initialStateName, precreatedStates)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -8,8 +8,19 @@ import (
 
 // read inputs, write outputs, read/write data
 type StateHandler func(inputs StateInputs, outputs StateOutputs, data StateData) error
+
 type StateInputs map[string]interface{}
+
 type StateOutputs map[string]interface{}
+
+func (so *StateOutputs) Convert2Inputs() StateInputs {
+	si := make(StateInputs)
+	for k, v := range *so {
+		si[k] = v
+	}
+	return si
+}
+
 type StateData map[string]interface{}
 
 /*
@@ -30,31 +41,25 @@ type State struct {
 
 // inputs can be nil
 func NewState(name string) *State {
-	inputs := make(StateInputs)
 	outputs := make(StateOutputs)
 	data := make(StateData)
 	handlers := make(map[string][]StateHandler)
 
 	return &State{
 		name:     name,
-		inputs:   inputs,
 		outputs:  outputs,
 		data:     data,
 		handlers: handlers,
 	}
 }
-
 func (s *State) GetName() string {
 	return s.name
 }
-func (s *State) SetInputs(inputs StateInputs) {
-	s.inputs = inputs
+func (s *State) GetData() StateData {
+	return s.data
 }
 func (s *State) GetOutputs() StateOutputs {
 	return s.outputs
-}
-func (s *State) GetData() StateData {
-	return s.data
 }
 
 // Appends a handler to the list of begin-handlers
@@ -73,12 +78,14 @@ func (s *State) AddHandlerEnd(handler StateHandler) {
 }
 
 // Executes all handlers in the order: begin-handlers, exec-handlers, end-handlers
-func (s *State) Activate() error {
+func (s *State) Activate(inputs StateInputs) (outputs StateOutputs, err error) {
+	s.inputs = deepcopy.Copy(inputs).(StateInputs)
+
 	// Executes all begin-handlers
 	for _, handler := range s.handlers["begin"] {
 		err := handler(s.inputs, s.outputs, s.data)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
@@ -86,7 +93,7 @@ func (s *State) Activate() error {
 	for _, handler := range s.handlers["exec"] {
 		err := handler(s.inputs, s.outputs, s.data)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
@@ -94,11 +101,11 @@ func (s *State) Activate() error {
 	for _, handler := range s.handlers["end"] {
 		err := handler(s.inputs, s.outputs, s.data)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	return nil
+	return s.outputs, nil
 }
 
 // Is returns true if the state name matches the given regexp

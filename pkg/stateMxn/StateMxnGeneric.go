@@ -53,6 +53,7 @@ func (smg *StateMxnGeneric) Change(nextStateName string) error {
 	// - creating a nextState, from a copy-or-a-new-state in precreatedStates
 	// - appending nextState to historyOfStates
 	// - setting currentState = nextState
+	// - call currentState.Activate(inputs)
 	//---------------------------------------------------------------------------------------------
 
 	// Performs safety-validations:
@@ -70,7 +71,8 @@ func (smg *StateMxnGeneric) Change(nextStateName string) error {
 
 		if smg.currentState == nil {
 			// When smg.currentState == nil this function is called to set initialstate, and then
-			// we accept any nextStateName as valid
+			// .we accept any nextStateName as valid (dont check if valid sourcestate or valid transition)
+			// .
 		} else {
 			// -- check if currentState is a valid sourcestate
 			err = smg.verifyIfValidSourcestate(smg.currentState.GetName())
@@ -83,7 +85,6 @@ func (smg *StateMxnGeneric) Change(nextStateName string) error {
 				return err
 			}
 		}
-
 	}
 
 	// and execute the change, by:
@@ -92,10 +93,27 @@ func (smg *StateMxnGeneric) Change(nextStateName string) error {
 	if err != nil {
 		return err
 	}
+	oldState := smg.currentState
+	var inputs StateInputs
+	if oldState == nil {
+		// When smg.currentState == nil this function is called to set initialstate
+		inputs = make(StateInputs)
+	} else {
+		oldState_outputs := oldState.GetOutputs()
+		inputs = oldState_outputs.Convert2Inputs()
+	}
+
 	// - appending nextState to historyOfStates
 	smg.historyOfStates = append(smg.historyOfStates, nextState)
 	// - setting currentState = nextState
 	smg.currentState = nextState
+
+	// - call currentState.Activate(inputs)
+	_, err = smg.currentState.Activate(inputs)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -183,7 +201,7 @@ func (smg *StateMxnGeneric) getStatecopyFromPrecreatedstatesOrNew(stateName stri
 		}
 	}
 
-	// and then return the state (correspoding to stateName), from:
+	// and then return the state (corresponding to stateName), from:
 	// - if precreatedStates contains that state, then return a copy of it
 	// or
 	// - create-and-store into precreatedStates a new state, and then return a copy of it
