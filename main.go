@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/zipizapclouds/stateMxn/pkg/stateMxn"
 )
@@ -135,6 +136,8 @@ func stateMxnGeneric_example3() {
 	runningState.AddHandlerExec(
 		func(inputs stateMxn.StateInputs, outputs stateMxn.StateOutputs, data stateMxn.StateData) error {
 			fmt.Println("+ inside runningState handlerExec")
+			// sleep 500 miliseconds
+			time.Sleep(500 * time.Millisecond)
 			return nil
 		})
 	runningState.AddHandlerEnd(
@@ -178,6 +181,13 @@ func stateMxnGeneric_example3() {
 		log.Fatal(err)
 	}
 	fmt.Println("isFinished:", isFinished) // true
+
+	fmt.Println("............................................")
+	fmt.Println("timeElapsed in each state:")
+	for _, state := range smg.GetHistoryOfStates() {
+		fmt.Printf("  %s:\t%s\n", state.GetName(), state.GetData()["timeElapsed"])
+	}
+
 }
 
 func main() {

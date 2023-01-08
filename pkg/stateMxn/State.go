@@ -2,6 +2,7 @@ package stateMxn
 
 import (
 	"regexp"
+	"time"
 
 	"github.com/mohae/deepcopy"
 )
@@ -31,7 +32,9 @@ type State struct {
 
 	inputs  StateInputs
 	outputs StateOutputs
-	data    StateData
+
+	// timestamps: data["timeStart"], data["timeEnd"], data["timeElapsed"]
+	data StateData
 
 	// handlers["begin"]
 	// handlers["exec"]
@@ -45,12 +48,14 @@ func NewState(name string) *State {
 	data := make(StateData)
 	handlers := make(map[string][]StateHandler)
 
-	return &State{
+	newState := &State{
 		name:     name,
 		outputs:  outputs,
 		data:     data,
 		handlers: handlers,
 	}
+	newState.addDefaultHandlers()
+	return newState
 }
 func (s *State) GetName() string {
 	return s.name
@@ -136,4 +141,18 @@ func (s *State) deepcopy() *State {
 		handlers: deepcopy.Copy(s.handlers).(map[string][]StateHandler),
 	}
 	return stateCopy
+}
+
+func (s *State) addDefaultHandlers() {
+	timeStartHandlerBegin := func(inputs StateInputs, outputs StateOutputs, data StateData) error {
+		data["timeStart"] = time.Now()
+		return nil
+	}
+	timeEndHandlerEnd := func(inputs StateInputs, outputs StateOutputs, data StateData) error {
+		data["timeEnd"] = time.Now()
+		data["timeElapsed"] = data["timeEnd"].(time.Time).Sub(data["timeStart"].(time.Time))
+		return nil
+	}
+	s.AddHandlerBegin(timeStartHandlerBegin)
+	s.AddHandlerEnd(timeEndHandlerEnd)
 }
