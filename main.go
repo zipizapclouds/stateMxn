@@ -145,19 +145,19 @@ func stateMxnGeneric_example3() {
 	runningState := stateMxn.NewState("Running")
 	{
 		runningState.AddHandlerBegin(
-			func(inputs stateMxn.StateInputs, outputs stateMxn.StateOutputs, data stateMxn.StateData) error {
+			func(inputs stateMxn.StateInputs, outputs stateMxn.StateOutputs, stateData stateMxn.StateData, smData stateMxn.StateMxnData) error {
 				fmt.Println("+ inside runningState handlerBegin")
 				return nil
 			})
 		runningState.AddHandlerExec(
-			func(inputs stateMxn.StateInputs, outputs stateMxn.StateOutputs, data stateMxn.StateData) error {
+			func(inputs stateMxn.StateInputs, outputs stateMxn.StateOutputs, stateData stateMxn.StateData, smData stateMxn.StateMxnData) error {
 				fmt.Println("+ inside runningState handlerExec")
 				// sleep 500 miliseconds
 				time.Sleep(500 * time.Millisecond)
 				return nil
 			})
 		runningState.AddHandlerEnd(
-			func(inputs stateMxn.StateInputs, outputs stateMxn.StateOutputs, data stateMxn.StateData) error {
+			func(inputs stateMxn.StateInputs, outputs stateMxn.StateOutputs, stateData stateMxn.StateData, smData stateMxn.StateMxnData) error {
 				fmt.Println("+ inside runningState handlerEnd")
 				return nil
 			})
@@ -240,14 +240,14 @@ func stateMxnGeneric_example4() {
 	// In the StateMxnSimpleflow, if the handlers return nil then the transition is done to the "Ok" state, otherwise the transition is done to the "Nok" state
 	runningAlphaState := stateMxn.NewState("RunningAlpha")
 	runningAlphaState.AddHandlerExec(
-		func(inputs stateMxn.StateInputs, outputs stateMxn.StateOutputs, data stateMxn.StateData) error {
+		func(inputs stateMxn.StateInputs, outputs stateMxn.StateOutputs, stateData stateMxn.StateData, smData stateMxn.StateMxnData) error {
 			// do alpha processing...
 			outputs["fromAlpha"] = "This is the output from alpha"
 			return nil
 		})
 	runningBetaState := stateMxn.NewState("RunningBeta")
 	runningBetaState.AddHandlerExec(
-		func(inputs stateMxn.StateInputs, outputs stateMxn.StateOutputs, data stateMxn.StateData) error {
+		func(inputs stateMxn.StateInputs, outputs stateMxn.StateOutputs, stateData stateMxn.StateData, smData stateMxn.StateMxnData) error {
 			// do beta processing...
 			fmt.Println("inputs[\"fromAlpha\"]:", inputs["fromAlpha"])
 			return fmt.Errorf("error created by handlerExec of RunningBeta to force transition to FinishedNok")

@@ -8,7 +8,7 @@ import (
 )
 
 // read inputs, write outputs, read/write data
-type StateHandler func(inputs StateInputs, outputs StateOutputs, data StateData) error
+type StateHandler func(inputs StateInputs, outputs StateOutputs, stateData StateData, smachineData StateMxnData) error
 
 type StateInputs map[string]interface{}
 
@@ -106,12 +106,12 @@ func (s *State) AddHandlerEnd(handler StateHandler) {
 // Executes all handlers in the order: begin-handlers, exec-handlers, end-handlers
 // If there is an error in any begin-handler, it will return it and not execute the exec-handlers nor end-handlers
 // If there is an error in any exec-handler, then it will still execute the end-handlers and then return the error
-func (s *State) Activate(inputs StateInputs) (outputs StateOutputs, err error) {
+func (s *State) Activate(smData StateMxnData, inputs StateInputs) (outputs StateOutputs, err error) {
 	s.inputs = deepcopy.Copy(inputs).(StateInputs)
 
 	// Executes all begin-handlers
 	for _, handler := range s.handlers["begin"] {
-		err := handler(s.inputs, s.outputs, s.data)
+		err := handler(s.inputs, s.outputs, s.data, smData)
 		if err != nil {
 			s.err = err
 			return nil, err
@@ -121,7 +121,7 @@ func (s *State) Activate(inputs StateInputs) (outputs StateOutputs, err error) {
 	// Executes all exec-handlers
 	var execErr error
 	for _, handler := range s.handlers["exec"] {
-		execErr = handler(s.inputs, s.outputs, s.data)
+		execErr = handler(s.inputs, s.outputs, s.data, smData)
 		if execErr != nil {
 			s.err = execErr
 			break
@@ -130,7 +130,7 @@ func (s *State) Activate(inputs StateInputs) (outputs StateOutputs, err error) {
 
 	// Executes all end-handlers
 	for _, handler := range s.handlers["end"] {
-		err := handler(s.inputs, s.outputs, s.data)
+		err := handler(s.inputs, s.outputs, s.data, smData)
 		if err != nil {
 			s.err = err
 			return nil, err
@@ -174,13 +174,13 @@ func (s *State) deepcopy() *State {
 }
 
 func (s *State) addDefaultHandlers() {
-	timeStartHandlerBegin := func(inputs StateInputs, outputs StateOutputs, data StateData) error {
-		data["timeStart"] = time.Now()
+	timeStartHandlerBegin := func(inputs StateInputs, outputs StateOutputs, stateData StateData, smData StateMxnData) error {
+		stateData["timeStart"] = time.Now()
 		return nil
 	}
-	timeEndHandlerEnd := func(inputs StateInputs, outputs StateOutputs, data StateData) error {
-		data["timeEnd"] = time.Now()
-		data["timeElapsed"] = data["timeEnd"].(time.Time).Sub(data["timeStart"].(time.Time))
+	timeEndHandlerEnd := func(inputs StateInputs, outputs StateOutputs, stateData StateData, smData StateMxnData) error {
+		stateData["timeEnd"] = time.Now()
+		stateData["timeElapsed"] = stateData["timeEnd"].(time.Time).Sub(stateData["timeStart"].(time.Time))
 		return nil
 	}
 	s.AddHandlerBegin(timeStartHandlerBegin)

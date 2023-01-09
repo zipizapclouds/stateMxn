@@ -6,6 +6,8 @@ import (
 	"github.com/davecgh/go-spew/spew"
 )
 
+type StateMxnData map[string]interface{}
+
 /*
 Features that exist in any StateMxnGeneric:
 
@@ -18,18 +20,14 @@ Features that exist in any StateMxnGeneric:
 # Use `smg.GetHistoryOfStates().DisplayStatesFlow()` to display the state-flow of the state-machine
 
 Use `smg.Is("^Finished"")` to check if the state-machine is in a specific state (regexp)
-
-----
-Ideas for future improvements:
-- StateMxnGeneric.data: to share/persist data inter-states
 */
 type StateMxnGeneric struct {
 	transitionsMap map[string][]string
 
-	// map[<statename>]*State
-	precreatedStates map[string]*State
+	precreatedStates map[string]*State // map[<statename>]*State
 	currentState     *State
 	historyOfStates  HistoryOfStates
+	data             StateMxnData // where different states can store inter-states data
 }
 
 // precreatedStates can be nil
@@ -119,7 +117,7 @@ func (smg *StateMxnGeneric) Change(nextStateName string) error {
 	smg.currentState = nextState
 
 	// - call currentState.Activate(inputs)
-	_, err = smg.currentState.Activate(inputs)
+	_, err = smg.currentState.Activate(smg.data, inputs)
 	if err != nil {
 		return err
 	}
@@ -151,6 +149,10 @@ func (smg *StateMxnGeneric) GetCurrentState() *State {
 // NOTE: historyOfStates[-1] == currentState
 func (smg *StateMxnGeneric) GetHistoryOfStates() HistoryOfStates {
 	return smg.historyOfStates
+}
+
+func (smg *StateMxnGeneric) GetData() StateMxnData {
+	return smg.data
 }
 
 // Returns if stateName is a valid source or destination state (ie, either in the transitions map keys or in the transitions map values)
