@@ -27,7 +27,7 @@ type StateData map[string]interface{}
 type HistoryOfStates []*State
 
 // Returns string with ordered states
-func (hos HistoryOfStates) DisplayProgress() string {
+func (hos HistoryOfStates) DisplayStatesFlow() string {
 	var str string
 	for _, state := range hos {
 		str += state.GetName() + "\t[" + state.GetData()["timeElapsed"].(time.Duration).String() + "]"
@@ -45,10 +45,12 @@ Begin-handlers   >   Exec-handlers   >  End-handlers
 type State struct {
 	name string
 
-	inputs  StateInputs
-	outputs StateOutputs
-	err     error
+	inputs  StateInputs  // input from previous state
+	outputs StateOutputs // output to next state. See also state.GetOutputs()
+	err     error        // error from any handler
 
+	// data is a map where handlers can store any data meaningfull for the state, and
+	// made publicly readable with state.GetData()
 	// --- timestamps ---
 	// data["timeStart"]
 	// data["timeEnd"]

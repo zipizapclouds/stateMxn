@@ -6,6 +6,23 @@ import (
 	"github.com/davecgh/go-spew/spew"
 )
 
+/*
+Features that exist in any StateMxnGeneric:
+
+- per-stage-handlers: each stage can have a handlerBegin, handlerExec and handlerEnd. The execution order is: handlerBegin, handlerExec, handlerEnd
+
+- stage-output-input chaining: the *ouput* from a state is copied to the *input* of the next state
+
+- stage-data: each state has a data map[string]interface{} where you can store any data meaningfull for that state
+
+# Use `smg.GetHistoryOfStates().DisplayStatesFlow()` to display the state-flow of the state-machine
+
+Use `smg.Is("^Finished"")` to check if the state-machine is in a specific state (regexp)
+
+----
+Ideas for future improvements:
+- StateMxnGeneric.data: to share/persist data inter-states
+*/
 type StateMxnGeneric struct {
 	transitionsMap map[string][]string
 

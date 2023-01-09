@@ -223,6 +223,9 @@ func stateMxnGeneric_example4() {
 	// |----------------------------------------> FinishedNok
 	//		     |------------------------------> FinishedNok
 	//		                      |-------------> FinishedNok
+	//
+	//
+
 	fmt.Println("===== stateMxnGeneric_example4 =====")
 
 	transitionsMap := map[string][]string{
@@ -239,12 +242,14 @@ func stateMxnGeneric_example4() {
 	runningAlphaState.AddHandlerExec(
 		func(inputs stateMxn.StateInputs, outputs stateMxn.StateOutputs, data stateMxn.StateData) error {
 			// do alpha processing...
+			outputs["fromAlpha"] = "This is the output from alpha"
 			return nil
 		})
 	runningBetaState := stateMxn.NewState("RunningBeta")
 	runningBetaState.AddHandlerExec(
 		func(inputs stateMxn.StateInputs, outputs stateMxn.StateOutputs, data stateMxn.StateData) error {
 			// do beta processing...
+			fmt.Println("inputs[\"fromAlpha\"]:", inputs["fromAlpha"])
 			return fmt.Errorf("error created by handlerExec of RunningBeta to force transition to FinishedNok")
 		})
 
@@ -267,7 +272,7 @@ func stateMxnGeneric_example4() {
 	fmt.Println("finalStateName:", finalStateName) // "FinishedNok"
 
 	fmt.Println("............................................")
-	fmt.Println(smsf.GetHistoryOfStates().DisplayProgress())
+	fmt.Println(smsf.GetHistoryOfStates().DisplayStatesFlow())
 }
 
 func main() {
