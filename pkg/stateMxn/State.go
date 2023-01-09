@@ -24,6 +24,21 @@ func (so *StateOutputs) Convert2Inputs() StateInputs {
 
 type StateData map[string]interface{}
 
+type HistoryOfStates []*State
+
+// Returns string with ordered states
+func (hos HistoryOfStates) DisplayProgress() string {
+	var str string
+	for _, state := range hos {
+		str += state.GetName() + "\t[" + state.GetData()["timeElapsed"].(time.Duration).String() + "]"
+		if state.err != nil {
+			str += "\t!ERROR: " + state.err.Error()
+		}
+		str += "\n"
+	}
+	return str
+}
+
 /*
 Begin-handlers   >   Exec-handlers   >  End-handlers
 */
@@ -32,8 +47,12 @@ type State struct {
 
 	inputs  StateInputs
 	outputs StateOutputs
+	err     error
 
-	// timestamps: data["timeStart"], data["timeEnd"], data["timeElapsed"]
+	// --- timestamps ---
+	// data["timeStart"]
+	// data["timeEnd"]
+	// data["timeElapsed"]
 	data StateData
 
 	// handlers["begin"]
@@ -83,6 +102,8 @@ func (s *State) AddHandlerEnd(handler StateHandler) {
 }
 
 // Executes all handlers in the order: begin-handlers, exec-handlers, end-handlers
+// If there is an error in any begin-handler, it will return it and not execute the exec-handlers nor end-handlers
+// If there is an error in any exec-handler, then it will still execute the end-handlers and then return the error
 func (s *State) Activate(inputs StateInputs) (outputs StateOutputs, err error) {
 	s.inputs = deepcopy.Copy(inputs).(StateInputs)
 
@@ -90,15 +111,18 @@ func (s *State) Activate(inputs StateInputs) (outputs StateOutputs, err error) {
 	for _, handler := range s.handlers["begin"] {
 		err := handler(s.inputs, s.outputs, s.data)
 		if err != nil {
+			s.err = err
 			return nil, err
 		}
 	}
 
 	// Executes all exec-handlers
+	var execErr error
 	for _, handler := range s.handlers["exec"] {
-		err := handler(s.inputs, s.outputs, s.data)
-		if err != nil {
-			return nil, err
+		execErr = handler(s.inputs, s.outputs, s.data)
+		if execErr != nil {
+			s.err = execErr
+			break
 		}
 	}
 
@@ -106,8 +130,12 @@ func (s *State) Activate(inputs StateInputs) (outputs StateOutputs, err error) {
 	for _, handler := range s.handlers["end"] {
 		err := handler(s.inputs, s.outputs, s.data)
 		if err != nil {
+			s.err = err
 			return nil, err
 		}
+	}
+	if execErr != nil {
+		return nil, execErr
 	}
 
 	return s.outputs, nil

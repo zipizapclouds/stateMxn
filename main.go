@@ -8,6 +8,12 @@ import (
 	"github.com/zipizapclouds/stateMxn/pkg/stateMxn"
 )
 
+func logFatalIfError(err error) {
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
 func stateMxnGeneric_example1() {
 	// ===== States and Tansitions =====
 	// Init
@@ -23,37 +29,34 @@ func stateMxnGeneric_example1() {
 		"Running": {"FinishedOk", "FinishedNok"},
 	}
 	initialStateName := "Init"
-	smg, err := stateMxn.NewStateMxnGeneric(transitionsMap, initialStateName, nil)
-	if err != nil {
-		log.Fatal(err)
-	}
+	smg, err := stateMxn.NewStateMxnGeneric(transitionsMap, nil)
+	logFatalIfError(err)
+
+	// Start by changing to the initial state
+	err = smg.Change(initialStateName)
+	logFatalIfError(err)
+
 	// Get current state name
 	currentStateName := smg.GetCurrentState().GetName()
 	fmt.Println("currentStateName:", currentStateName) // "Init"
 
 	// Change state
 	err = smg.Change("Running")
-	if err != nil {
-		log.Fatal(err)
-	}
+	logFatalIfError(err)
 	// Get current state name
 	currentStateName = smg.GetCurrentState().GetName()
 	fmt.Println("currentStateName:", currentStateName) // "Running"
 
 	// Change state
 	err = smg.Change("FinishedOk")
-	if err != nil {
-		log.Fatal(err)
-	}
+	logFatalIfError(err)
 	// Get current state name
 	currentStateName = smg.GetCurrentState().GetName()
 	fmt.Println("currentStateName:", currentStateName) // "FinishedOk"
 
 	// Check if current state matches any ^Finished state
 	isFinished, err := smg.GetCurrentState().Is("^Finished")
-	if err != nil {
-		log.Fatal(err)
-	}
+	logFatalIfError(err)
 	fmt.Println("isFinished:", isFinished) // true
 }
 
@@ -82,7 +85,11 @@ func stateMxnGeneric_example2() {
 			"FinishedNok"},
 	}
 	initialStateName := "Init_TriggerB"
-	smg, _ := stateMxn.NewStateMxnGeneric(transitionsMap, initialStateName, nil)
+	smg, err := stateMxn.NewStateMxnGeneric(transitionsMap, nil)
+	logFatalIfError(err)
+	err = smg.Change(initialStateName)
+	logFatalIfError(err)
+
 	fmt.Println("currentStateName:", smg.GetCurrentState().GetName()) // "Init_TriggerB"
 	f := func() (isInit, isRunning, isFinished bool) {
 		isInit, _ = smg.Is("^Init")
@@ -93,17 +100,20 @@ func stateMxnGeneric_example2() {
 	isInit, isRunning, isFinished := f()
 	fmt.Printf("isInit: %v, isRunning: %v, isFinished: %v\n", isInit, isRunning, isFinished) // true, false, false
 
-	_ = smg.Change("Running_ProcessZeta")
+	err = smg.Change("Running_ProcessZeta")
+	logFatalIfError(err)
 	fmt.Println("currentStateName:", smg.GetCurrentState().GetName()) // "Running_ProcessZeta"
 	isInit, isRunning, isFinished = f()
 	fmt.Printf("isInit: %v, isRunning: %v, isFinished: %v\n", isInit, isRunning, isFinished) // false, true, false
 
-	_ = smg.Change("Running_ProcessTau")
+	err = smg.Change("Running_ProcessTau")
+	logFatalIfError(err)
 	fmt.Println("currentStateName:", smg.GetCurrentState().GetName()) // "Running_ProcessTau"
 	isInit, isRunning, isFinished = f()
 	fmt.Printf("isInit: %v, isRunning: %v, isFinished: %v\n", isInit, isRunning, isFinished) // false, true, false
 
-	_ = smg.Change("FinishedOk")
+	err = smg.Change("FinishedOk")
+	logFatalIfError(err)
 	fmt.Println("currentStateName:", smg.GetCurrentState().GetName()) // "FinishedOk"
 	isInit, isRunning, isFinished = f()
 	fmt.Printf("isInit: %v, isRunning: %v, isFinished: %v\n", isInit, isRunning, isFinished) // false, false, true
@@ -118,7 +128,6 @@ func stateMxnGeneric_example3() {
 	//   |--------------------> FinishedNok
 	fmt.Println("===== stateMxnGeneric_example3 =====")
 
-	// Create a StateMxnGeneric
 	transitionsMap := map[string][]string{
 		"Init":    {"Running", "FinishedNok"},
 		"Running": {"FinishedOk", "FinishedNok"},
@@ -126,60 +135,58 @@ func stateMxnGeneric_example3() {
 	initialStateName := "Init"
 
 	// When the statemachine changes to a state containing handlers, the handlers are called
-	// So lets pre-create the states objects to add handlers to them
+	// To pass the handlers of states, we need to pre-create the states objects beforehand and add handlers to them
 	runningState := stateMxn.NewState("Running")
-	runningState.AddHandlerBegin(
-		func(inputs stateMxn.StateInputs, outputs stateMxn.StateOutputs, data stateMxn.StateData) error {
-			fmt.Println("+ inside runningState handlerBegin")
-			return nil
-		})
-	runningState.AddHandlerExec(
-		func(inputs stateMxn.StateInputs, outputs stateMxn.StateOutputs, data stateMxn.StateData) error {
-			fmt.Println("+ inside runningState handlerExec")
-			// sleep 500 miliseconds
-			time.Sleep(500 * time.Millisecond)
-			return nil
-		})
-	runningState.AddHandlerEnd(
-		func(inputs stateMxn.StateInputs, outputs stateMxn.StateOutputs, data stateMxn.StateData) error {
-			fmt.Println("+ inside runningState handlerEnd")
-			return nil
-		})
-
+	{
+		runningState.AddHandlerBegin(
+			func(inputs stateMxn.StateInputs, outputs stateMxn.StateOutputs, data stateMxn.StateData) error {
+				fmt.Println("+ inside runningState handlerBegin")
+				return nil
+			})
+		runningState.AddHandlerExec(
+			func(inputs stateMxn.StateInputs, outputs stateMxn.StateOutputs, data stateMxn.StateData) error {
+				fmt.Println("+ inside runningState handlerExec")
+				// sleep 500 miliseconds
+				time.Sleep(500 * time.Millisecond)
+				return nil
+			})
+		runningState.AddHandlerEnd(
+			func(inputs stateMxn.StateInputs, outputs stateMxn.StateOutputs, data stateMxn.StateData) error {
+				fmt.Println("+ inside runningState handlerEnd")
+				return nil
+			})
+	}
 	precreatedStates := map[string]*stateMxn.State{
 		"Running": runningState,
 	}
-	smg, err := stateMxn.NewStateMxnGeneric(transitionsMap, initialStateName, precreatedStates)
-	if err != nil {
-		log.Fatal(err)
-	}
+
+	// Now lets create the statemachine passing the precreated states
+	smg, err := stateMxn.NewStateMxnGeneric(transitionsMap, precreatedStates)
+	logFatalIfError(err)
+	err = smg.Change(initialStateName)
+	logFatalIfError(err)
+
 	// Get current state name
 	currentStateName := smg.GetCurrentState().GetName()
 	fmt.Println("currentStateName:", currentStateName) // "Init"
 
 	// Change state
 	err = smg.Change("Running")
-	if err != nil {
-		log.Fatal(err)
-	}
+	logFatalIfError(err)
 	// Get current state name
 	currentStateName = smg.GetCurrentState().GetName()
 	fmt.Println("currentStateName:", currentStateName) // "Running"
 
 	// Change state
 	err = smg.Change("FinishedOk")
-	if err != nil {
-		log.Fatal(err)
-	}
+	logFatalIfError(err)
 	// Get current state name
 	currentStateName = smg.GetCurrentState().GetName()
 	fmt.Println("currentStateName:", currentStateName) // "FinishedOk"
 
 	// Check if current state matches any ^Finished state
 	isFinished, err := smg.GetCurrentState().Is("^Finished")
-	if err != nil {
-		log.Fatal(err)
-	}
+	logFatalIfError(err)
 	fmt.Println("isFinished:", isFinished) // true
 
 	fmt.Println("............................................")
@@ -187,12 +194,80 @@ func stateMxnGeneric_example3() {
 	for _, state := range smg.GetHistoryOfStates() {
 		fmt.Printf("  %s:\t%s\n", state.GetName(), state.GetData()["timeElapsed"])
 	}
+}
 
+func stateMxnGeneric_example4() {
+	// Shows how to use StateMxnSimpleflow:
+	//  - each state should have 2 (at least) destination-transition-states: "Ok" and "Nok" (except for final-states)
+	//  - each state should have one-or-more handlerExec functions (except for final-states)
+	// When a there is a change to a state, that state handlers are called in order, and then
+	// the transition to another state is done automatically based on the return value of the handlers of current-state:
+	//  - if all the handlers return nil, the transition is done to the "Ok" state
+	//  - if any of the handlers returns an error, the transition is done to the "Nok" state
+	// The "Ok" state is considered the stateMxn.GetTransitionMap()[currentStateName][0] state
+	// The "Nok" state is considered the stateMxn.GetTransitionMap()[currentStateName][-1] state (where -1 represents the index of last-element)
+	//
+	// Notice that this example if very similar to example3, but:
+	// - uses StateMxnSimpleflow instead of StateMxnGeneric
+	// - the states-changes progress automatically, that is done by the state-machine itself (without requiring external calls to sm.Change())
+
+	//
+	// ===== States and Tansitions =====
+	// Init  --> RunningAlpha --> RunningBeta --> FinishedOk
+	// |----------------------------------------> FinishedNok
+	//		     |------------------------------> FinishedNok
+	//		                      |-------------> FinishedNok
+	fmt.Println("===== stateMxnGeneric_example4 =====")
+
+	transitionsMap := map[string][]string{
+		"Init":         {"RunningAlpha", "FinishedNok"}, // first-transition is "Ok" transition, second-transition is "Nok" transition
+		"RunningAlpha": {"RunningBeta", "FinishedNok"},  // first-transition is "Ok" transition, second-transition is "Nok" transition
+		"RunningBeta":  {"FinishedOk", "FinishedNok"},   // first-transition is "Ok" transition, second-transition is "Nok" transition
+	}
+	initialStateName := "Init"
+
+	// When the statemachine changes to a state containing handlers, the handlers are called
+	// To pass the handlers of states, we need to pre-create the states objects beforehand and add handlers to them
+	// In the StateMxnSimpleflow, if the handlers return nil then the transition is done to the "Ok" state, otherwise the transition is done to the "Nok" state
+	runningAlphaState := stateMxn.NewState("RunningAlpha")
+	runningAlphaState.AddHandlerExec(
+		func(inputs stateMxn.StateInputs, outputs stateMxn.StateOutputs, data stateMxn.StateData) error {
+			// do alpha processing...
+			return nil
+		})
+	runningBetaState := stateMxn.NewState("RunningBeta")
+	runningBetaState.AddHandlerExec(
+		func(inputs stateMxn.StateInputs, outputs stateMxn.StateOutputs, data stateMxn.StateData) error {
+			// do beta processing...
+			return fmt.Errorf("error created by handlerExec of RunningBeta to force transition to FinishedNok")
+		})
+
+	// Precreated states
+	precreatedStates := map[string]*stateMxn.State{
+		runningAlphaState.GetName(): runningAlphaState,
+		runningBetaState.GetName():  runningBetaState,
+	}
+
+	// Now lets create the statemachine passing the precreated states
+	smsf, err := stateMxn.NewStateMxnSimpleFlow(transitionsMap, precreatedStates)
+	logFatalIfError(err)
+	err = smsf.ChangeToInitialStateAndAutoprogressToOtherStates(initialStateName)
+	logFatalIfError(err)
+
+	// At this point, the statemachine has already autoprogressed until a final state (FinishedOk or FinishedNok) was reached
+	// Get final state name, which is the current state name
+	currentStateName := smsf.GetCurrentState().GetName()
+	finalStateName := currentStateName
+	fmt.Println("finalStateName:", finalStateName) // "FinishedNok"
+
+	fmt.Println("............................................")
+	fmt.Println(smsf.GetHistoryOfStates().DisplayProgress())
 }
 
 func main() {
 	stateMxnGeneric_example1()
 	stateMxnGeneric_example2()
 	stateMxnGeneric_example3()
+	stateMxnGeneric_example4()
 
 }

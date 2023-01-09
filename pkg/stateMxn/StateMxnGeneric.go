@@ -12,11 +12,11 @@ type StateMxnGeneric struct {
 	// map[<statename>]*State
 	precreatedStates map[string]*State
 	currentState     *State
-	historyOfStates  []*State
+	historyOfStates  HistoryOfStates
 }
 
 // precreatedStates can be nil
-func NewStateMxnGeneric(transitionsMap map[string][]string, initialStateName string, precreatedStates map[string]*State) (*StateMxnGeneric, error) {
+func NewStateMxnGeneric(transitionsMap map[string][]string, precreatedStates map[string]*State) (*StateMxnGeneric, error) {
 	smg := &StateMxnGeneric{}
 
 	// FutureImprovement: Assure transitionsMap is valid
@@ -32,13 +32,6 @@ func NewStateMxnGeneric(transitionsMap map[string][]string, initialStateName str
 	} else {
 		smg.precreatedStates = precreatedStates
 	}
-
-	// Define smg.currentState and smg.historyOfStates from initialStateName
-	err := smg.Change(initialStateName)
-	if err != nil {
-		return nil, err
-	}
-
 	return smg, nil
 }
 
@@ -139,7 +132,7 @@ func (smg *StateMxnGeneric) GetCurrentState() *State {
 }
 
 // NOTE: historyOfStates[-1] == currentState
-func (smg *StateMxnGeneric) GetHistoryOfStates() []*State {
+func (smg *StateMxnGeneric) GetHistoryOfStates() HistoryOfStates {
 	return smg.historyOfStates
 }
 

@@ -1,5 +1,11 @@
 package stateMxn
 
+/* TODO
+- StateMxnSimpleflow
+- StateMxnGeneric.DisplayProgressFlow() string
+
+*/
+
 /*
 StateMxnSimpleflow
 
@@ -14,45 +20,69 @@ The state machine will take each state, execute its handlers with state.Activate
   - if there is no error, it will change to nextStateOk which assumed to be sm.transitionsMap[state.GetName()][0], and progress from there
   - if there is an error, it will change to FailedNok which is assumed to be sm.transitionsMap[state.GetName()][-1]
 
-So overall, this statemachine should take some precreated states, each with 2 transitions and 1-or-more-handlers, and will automatically
+So overall, this statemachine should take some precreated states, each with 2 transitions and 1-or-more-handlersExec, and will automatically
 progress the execution from state to state, until it reaches a finalstate, or an error occurs.
 
 There is no smsf.Change() method, because the state machine will start executing the initial state when NewStateMxnSimpleFlow() is called, and
-then will automatically progress through the states, until it reaches a final state, or an error occurs.
+then will automatically progress through the states, until it reaches a final state or an error occurs.
 */
 type StateMxnSimpleflow struct {
 	smg *StateMxnGeneric
 }
 
-func NewStateMxnSimpleFlow(transitionsMap map[string][]string, initialStateName string, precreatedStates map[string]*State) (*StateMxnSimpleflow, error) {
+// Will create a new StateMxnSimpleflow, and will automatically progress through the states, until it reaches a final state or an error occurs.
+func NewStateMxnSimpleFlow(transitionsMap map[string][]string, precreatedStates map[string]*State) (*StateMxnSimpleflow, error) {
 	smsf := &StateMxnSimpleflow{}
 
-	// NewStateMxnGeneric will Change() into initialstate, and return its error
-	// The initialstate should never fail, because if would not allow the state machine to be created
-	smg, err := NewStateMxnGeneric(transitionsMap, initialStateName, precreatedStates)
-	if err != nil {
-		return nil, err
-	}
-	// At this point, the initialstate is was executed, and the state machine is ready to progress
-	nextStateName, ok := smg.GetTransitionsMap()
-	/// CONTINUE HERE
-	// loop over the state, to the nextstateOk or failedStateNok
-
-	smg.GetCurrentState().GetName()
-
+	smg, err := NewStateMxnGeneric(transitionsMap, precreatedStates)
 	smsf.smg = smg
+	if err != nil {
+		return smsf, err
+	}
 	return smsf, nil
 }
 
+// This function will automatically progress through the states, until it reaches a final state or an error occurs.
+// It will return the error, if any.
+func (smsf *StateMxnSimpleflow) ChangeToInitialStateAndAutoprogressToOtherStates(initialstateName string) error {
+	hasOkNokTransitionsFunc := func(stateName string) (hasOkNokTransitions bool, OkStatename string, NokStatename string) {
+		if len(smsf.smg.GetTransitionsMap()[stateName]) < 2 {
+			return false, "", ""
+		}
+		OkStatename = smsf.smg.GetTransitionsMap()[stateName][0]
+		NokStatename = smsf.smg.GetTransitionsMap()[stateName][len(smsf.smg.GetTransitionsMap()[stateName])-1]
+		return true, OkStatename, NokStatename
+	}
+
+	a_state := initialstateName
+	for {
+		hasOkNokTransitions, OkStatename, NokStatename := hasOkNokTransitionsFunc(a_state)
+		serr := smsf.smg.Change(a_state)
+		// NOTE: serr may come from handler-error or another-error. We assume its a handler-error without additional checks
+		if serr == nil {
+			if !hasOkNokTransitions {
+				// this state has no transitions defined, so this is a final-state, return nil
+				return nil
+			}
+			a_state = OkStatename
+		} else {
+			if !hasOkNokTransitions {
+				// this state has no transitions defined, so this is a final-state, return serr
+				return serr
+			}
+			a_state = NokStatename
+		}
+	}
+}
 func (smsf *StateMxnSimpleflow) GetCurrentState() *State {
 	return smsf.smg.GetCurrentState()
 }
-func (smsf *StateMxnSimpleflow) GetHistoryOfStates() []*State {
+func (smsf *StateMxnSimpleflow) GetHistoryOfStates() HistoryOfStates {
 	return smsf.smg.GetHistoryOfStates()
 }
 func (smsf *StateMxnSimpleflow) GetTransitionsMap() map[string][]string {
 	return smsf.smg.GetTransitionsMap()
 }
-func (smsf *StateMxnSimpleflow) Is(stateName string) bool {
+func (smsf *StateMxnSimpleflow) Is(stateName string) (bool, error) {
 	return smsf.smg.Is(stateName)
 }
