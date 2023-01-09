@@ -5,20 +5,22 @@ StateMxnSimpleflow
 
 This is a special implementation of a statemxn, where each state should have 2 trasitions:
 
-	[0] nextStateOk
-	[-1] FailedNok
+	[0] "Ok" state
+	[-1] "Nok" state
 
 and each state should be precreated with some execution-handler, to do some processing.
 
 The state machine will take each state, execute its handlers with state.Activate() and
-  - if there is no error, it will change to nextStateOk which assumed to be sm.transitionsMap[state.GetName()][0], and progress from there
-  - if there is an error, it will change to FailedNok which is assumed to be sm.transitionsMap[state.GetName()][-1]
+  - if there is no error, it will change to "Ok" state which assumed to be sm.transitionsMap[state.GetName()][0], and progress from there
+  - if there is an error, it will change to "Nok" state which is assumed to be sm.transitionsMap[state.GetName()][-1]
 
 So overall, this statemachine should take some precreated states, each with 2 transitions and 1-or-more-handlersExec, and will automatically
 progress the execution from state to state, until it reaches a finalstate, or an error occurs.
 
 There is no smsf.Change() method, because the state machine will start executing the initial state when NewStateMxnSimpleFlow() is called, and
 then will automatically progress through the states, until it reaches a final state or an error occurs.
+
+Examples: see main.go example4
 */
 type StateMxnSimpleflow struct {
 	smg *StateMxnGeneric

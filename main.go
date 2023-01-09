@@ -15,6 +15,8 @@ func logFatalIfError(err error) {
 }
 
 func stateMxnGeneric_example1() {
+	// Basic usage of StateMxnGeneric
+	//
 	// ===== States and Tansitions =====
 	// Init
 	//   |--> Running
@@ -61,6 +63,8 @@ func stateMxnGeneric_example1() {
 }
 
 func stateMxnGeneric_example2() {
+	// More complex state machine, with multiple states and transitions
+	//
 	// ===== States and Tansitions =====
 	// Init_TriggerA -------+-> Running_ProcessZeta -----> Running_ProcessTau  ---------> FinishedOk
 	//  | Init_TriggerB ---/      |                          |
@@ -120,6 +124,8 @@ func stateMxnGeneric_example2() {
 }
 
 func stateMxnGeneric_example3() {
+	// State machine, with state-handlers
+	//
 	// ===== States and Tansitions =====
 	// Init
 	//   |--> Running
@@ -197,9 +203,9 @@ func stateMxnGeneric_example3() {
 }
 
 func stateMxnGeneric_example4() {
-	// Shows how to use StateMxnSimpleflow:
-	//  - each state should have 2 (at least) destination-transition-states: "Ok" and "Nok" (except for final-states)
-	//  - each state should have one-or-more handlerExec functions (except for final-states)
+	// This example shows how to use StateMxnSimpleflow:
+	//  - each state should have 2 (at least) destination-transition-states: "Ok" and "Nok" (except final-states)
+	//  - each state can have zero-or-more handlerExec functions
 	// When a there is a change to a state, that state handlers are called in order, and then
 	// the transition to another state is done automatically based on the return value of the handlers of current-state:
 	//  - if all the handlers return nil, the transition is done to the "Ok" state
