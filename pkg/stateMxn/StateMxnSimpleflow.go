@@ -1,11 +1,5 @@
 package stateMxn
 
-/* TODO
-- StateMxnSimpleflow
-- StateMxnGeneric.DisplayProgressFlow() string
-
-*/
-
 /*
 StateMxnSimpleflow
 
