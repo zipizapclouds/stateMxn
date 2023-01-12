@@ -106,7 +106,7 @@ func (smg *StateMxnGeneric) Change(nextStateName string) error {
 	smg.currentState = nextState
 
 	// - call currentState.Activate(inputs)
-	_, err = smg.currentState.Activate(smg.data, inputs)
+	_, err = smg.currentState.activate(smg.data, inputs)
 	if err != nil {
 		return err
 	}
@@ -208,7 +208,7 @@ func (smg *StateMxnGeneric) getStatecopyFromPrecreatedstatesOrNew(stateName stri
 	// - create-and-store into precreatedStates a new state, and then return a copy of it
 	if stateCandidate, ok := smg.precreatedStates[stateName]; ok {
 		// precreatedStates contains that state, lets return a copy of it
-		stateCopy := stateCandidate.Deepcopy()
+		stateCopy := stateCandidate.deepcopy()
 		return stateCopy, nil
 	} else {
 		// precreatedStates does not contain that state
@@ -216,7 +216,7 @@ func (smg *StateMxnGeneric) getStatecopyFromPrecreatedstatesOrNew(stateName stri
 		state := NewState(stateName)
 		smg.precreatedStates[stateName] = state
 
-		stateCopy := state.Deepcopy()
+		stateCopy := state.deepcopy()
 		return stateCopy, nil
 	}
 }

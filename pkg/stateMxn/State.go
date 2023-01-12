@@ -20,9 +20,9 @@ type StateIfc interface {
 	AddHandlerBegin(handler StateHandler)
 	AddHandlerExec(handler StateHandler)
 	AddHandlerEnd(handler StateHandler)
-	Activate(smData StateMxnData, inputs StateInputs) (outputs StateOutputs, err error)
+	activate(smData StateMxnData, inputs StateInputs) (outputs StateOutputs, err error)
 	Is(stateNameRegexp string) (bool, error)
-	Deepcopy() StateIfc
+	deepcopy() StateIfc
 }
 
 // read inputs, write outputs, read/write data
@@ -130,7 +130,7 @@ func (s *State) AddHandlerEnd(handler StateHandler) {
 // Executes all handlers in the order: begin-handlers, exec-handlers, end-handlers
 // If there is an error in any begin-handler, it will return it and not execute the exec-handlers nor end-handlers
 // If there is an error in any exec-handler, then it will still execute the end-handlers and then return the error
-func (s *State) Activate(smData StateMxnData, inputs StateInputs) (outputs StateOutputs, err error) {
+func (s *State) activate(smData StateMxnData, inputs StateInputs) (outputs StateOutputs, err error) {
 	s.inputs = deepcopy.Copy(inputs).(StateInputs)
 
 	// Executes all begin-handlers
@@ -181,7 +181,7 @@ func (s *State) Is(stateNameRegexp string) (bool, error) {
 	return regexp.MatchString(stateNameRegexp, s.name)
 }
 
-func (s *State) Deepcopy() StateIfc {
+func (s *State) deepcopy() StateIfc {
 	// NOTE: deepcopy libs like https://github.com/barkimedes/go-deepcopy or https://github.com/mohae/deepcopy
 	//       dont copy unexported fields - so we need to define our own deepcopy() method
 	// 	     for the type, in the package where the type is defined
