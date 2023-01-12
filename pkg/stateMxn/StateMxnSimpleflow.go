@@ -23,37 +23,45 @@ then will automatically progress through the states, until it reaches a final st
 Examples: see main.go example4
 */
 type StateMxnSimpleflow struct {
-	smg *StateMxnGeneric
+	StateMxnGeneric
 }
 
 // Will create a new StateMxnSimpleflow, and will automatically progress through the states, until it reaches a final state or an error occurs.
 func NewStateMxnSimpleFlow(transitionsMap map[string][]string, precreatedStates map[string]*State) (*StateMxnSimpleflow, error) {
 	smsf := &StateMxnSimpleflow{}
+	return smsf.newStateMxnSimpleFlow(transitionsMap, precreatedStates)
 
-	smg, err := NewStateMxnGeneric(transitionsMap, precreatedStates)
-	smsf.smg = smg
+}
+func (smsf *StateMxnSimpleflow) newStateMxnSimpleFlow(transitionsMap map[string][]string, precreatedStates map[string]*State) (*StateMxnSimpleflow, error) {
+	// call constructor for StateMxnGeneric
+	_, err := smsf.newStateMxnGeneric(transitionsMap, precreatedStates)
 	if err != nil {
 		return smsf, err
 	}
-	return smsf, nil
+
+	// call constructor for StateMxnSimpleflow
+	// ... (nothing at the moment, but we keep it for future use, if we need to add some more initializations to StateMxnSimpleflow)
+
+	// return smsf
+	return smsf, err
 }
 
 // This function will automatically progress through the states, until it reaches a final state or an error occurs.
 // It will return the error, if any.
 func (smsf *StateMxnSimpleflow) ChangeToInitialStateAndAutoprogressToOtherStates(initialstateName string) error {
 	hasOkNokTransitionsFunc := func(stateName string) (hasOkNokTransitions bool, OkStatename string, NokStatename string) {
-		if len(smsf.smg.GetTransitionsMap()[stateName]) < 2 {
+		if len(smsf.GetTransitionsMap()[stateName]) < 2 {
 			return false, "", ""
 		}
-		OkStatename = smsf.smg.GetTransitionsMap()[stateName][0]
-		NokStatename = smsf.smg.GetTransitionsMap()[stateName][len(smsf.smg.GetTransitionsMap()[stateName])-1]
+		OkStatename = smsf.GetTransitionsMap()[stateName][0]
+		NokStatename = smsf.GetTransitionsMap()[stateName][len(smsf.GetTransitionsMap()[stateName])-1]
 		return true, OkStatename, NokStatename
 	}
 
 	a_state := initialstateName
 	for {
 		hasOkNokTransitions, OkStatename, NokStatename := hasOkNokTransitionsFunc(a_state)
-		serr := smsf.smg.Change(a_state)
+		serr := smsf.Change(a_state)
 		// NOTE: serr may come from handler-error or another-error. We assume its a handler-error without additional checks
 		if serr == nil {
 			if !hasOkNokTransitions {
@@ -69,16 +77,4 @@ func (smsf *StateMxnSimpleflow) ChangeToInitialStateAndAutoprogressToOtherStates
 			a_state = NokStatename
 		}
 	}
-}
-func (smsf *StateMxnSimpleflow) GetCurrentState() *State {
-	return smsf.smg.GetCurrentState()
-}
-func (smsf *StateMxnSimpleflow) GetHistoryOfStates() HistoryOfStates {
-	return smsf.smg.GetHistoryOfStates()
-}
-func (smsf *StateMxnSimpleflow) GetTransitionsMap() map[string][]string {
-	return smsf.smg.GetTransitionsMap()
-}
-func (smsf *StateMxnSimpleflow) Is(stateName string) (bool, error) {
-	return smsf.smg.Is(stateName)
 }

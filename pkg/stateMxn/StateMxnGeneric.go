@@ -14,15 +14,15 @@ Features that exist in any StateMxnGeneric:
   - per-state-handlers: each state can have a handlerBegin, handlerExec and handlerEnd. The execution order is: handlerBegin, handlerExec, handlerEnd.
     Both handlerBegin and handlerEnd are optional, and both will always execute even when handlerExec errors.
 
-- state-output-input chaining: the *ouput* from a state is copied to the *input* of the next state
+  - state-output-input chaining: the *ouput* from a state is copied to the *input* of the next state
 
-- state-data: each state has a data map[string]interface{} where you can store any internal-state-data meaningfull for that state
+  - state-data: each state has a data map[string]interface{} where you can store any internal-state-data meaningfull for that state
 
-- smachine-data: each smachine has a data map[string]interface{} where you can store any inter-state-data meaningfull for states of that smachine
+  - smachine-data: each smachine has a data map[string]interface{} where you can store any inter-state-data meaningfull for states of that smachine
 
-# Use `smg.GetHistoryOfStates().DisplayStatesFlow()` to display the state-flow of the state-machine
+  - Use `smg.GetHistoryOfStates().DisplayStatesFlow()` to display the state-flow of the state-machine
 
-Use `smg.Is("^Finished"")` to check if the state-machine is in a specific state (regexp)
+  - Use `smg.Is("^Finished"")` to check if the state-machine is in a specific state (regexp)
 */
 type StateMxnGeneric struct {
 	transitionsMap map[string][]string
@@ -36,9 +36,10 @@ type StateMxnGeneric struct {
 // precreatedStates can be nil
 func NewStateMxnGeneric(transitionsMap map[string][]string, precreatedStates map[string]*State) (*StateMxnGeneric, error) {
 	smg := &StateMxnGeneric{}
-
+	return smg.newStateMxnGeneric(transitionsMap, precreatedStates)
+}
+func (smg *StateMxnGeneric) newStateMxnGeneric(transitionsMap map[string][]string, precreatedStates map[string]*State) (*StateMxnGeneric, error) {
 	// FutureImprovement: Assure transitionsMap is valid
-
 	// FutureImprovement: Assure precreatedStates is valid
 
 	// Define smg.transitionsMap
@@ -222,7 +223,7 @@ func (smg *StateMxnGeneric) getStatecopyFromPrecreatedstatesOrNew(stateName stri
 	// - create-and-store into precreatedStates a new state, and then return a copy of it
 	if stateCandidate, ok := smg.precreatedStates[stateName]; ok {
 		// precreatedStates contains that state, lets return a copy of it
-		stateCopy := stateCandidate.deepcopy()
+		stateCopy := stateCandidate.Deepcopy()
 		return stateCopy, nil
 	} else {
 		// precreatedStates does not contain that state
@@ -230,7 +231,7 @@ func (smg *StateMxnGeneric) getStatecopyFromPrecreatedstatesOrNew(stateName stri
 		state := NewState(stateName)
 		smg.precreatedStates[stateName] = state
 
-		stateCopy := state.deepcopy()
+		stateCopy := state.Deepcopy()
 		return stateCopy, nil
 	}
 }

@@ -157,7 +157,7 @@ func (s *State) Is(stateNameRegexp string) (bool, error) {
 	return regexp.MatchString(stateNameRegexp, s.name)
 }
 
-func (s *State) deepcopy() *State {
+func (s *State) Deepcopy() *State {
 	// NOTE: deepcopy libs like https://github.com/barkimedes/go-deepcopy or https://github.com/mohae/deepcopy
 	//       dont copy unexported fields - so we need to define our own deepcopy() method
 	// 	     for the type, in the package where the type is defined
