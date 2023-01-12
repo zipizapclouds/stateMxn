@@ -27,18 +27,15 @@ The smsf.Change() method should not be used - use smsf.ChangeToInitialStateAndAu
 Examples: see main.go example4
 */
 type StateMxnSimpleflow struct {
-	StateMxnGeneric
+	*StateMxnGeneric
 }
 
 // Will create a new StateMxnSimpleflow, and will automatically progress through the states, until it reaches a final state or an error occurs.
 func NewStateMxnSimpleFlow(transitionsMap map[string][]string, precreatedStates map[string]StateIfc) (*StateMxnSimpleflow, error) {
 	smsf := &StateMxnSimpleflow{}
-	return smsf.newStateMxnSimpleFlow(transitionsMap, precreatedStates)
-
-}
-func (smsf *StateMxnSimpleflow) newStateMxnSimpleFlow(transitionsMap map[string][]string, precreatedStates map[string]StateIfc) (*StateMxnSimpleflow, error) {
 	// call constructor for StateMxnGeneric
-	_, err := smsf.newStateMxnGeneric(transitionsMap, precreatedStates)
+	smg, err := NewStateMxnGeneric(transitionsMap, precreatedStates)
+	smsf.StateMxnGeneric = smg
 	if err != nil {
 		return smsf, err
 	}
