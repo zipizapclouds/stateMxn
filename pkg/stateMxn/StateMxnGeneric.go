@@ -27,31 +27,16 @@ Features that exist in any StateMxnGeneric:
 type StateMxnGeneric struct {
 	transitionsMap map[string][]string
 
-	precreatedStates map[string]*State // map[<statename>]*State
-	currentState     *State
+	precreatedStates map[string]StateIfc // map[<statename>]*State
+	currentState     StateIfc
 	historyOfStates  HistoryOfStates
 	data             StateMxnData // where different states can store inter-states data
 }
 
 // precreatedStates can be nil
-func NewStateMxnGeneric(transitionsMap map[string][]string, precreatedStates map[string]*State) (*StateMxnGeneric, error) {
+func NewStateMxnGeneric(transitionsMap map[string][]string, precreatedStates map[string]StateIfc) (*StateMxnGeneric, error) {
 	smg := &StateMxnGeneric{}
 	return smg.newStateMxnGeneric(transitionsMap, precreatedStates)
-}
-func (smg *StateMxnGeneric) newStateMxnGeneric(transitionsMap map[string][]string, precreatedStates map[string]*State) (*StateMxnGeneric, error) {
-	// FutureImprovement: Assure transitionsMap is valid
-	// FutureImprovement: Assure precreatedStates is valid
-
-	// Define smg.transitionsMap
-	smg.transitionsMap = transitionsMap
-
-	// Define smg.precreatedStates from precreatedStates or from a new map
-	if precreatedStates == nil {
-		smg.precreatedStates = make(map[string]*State)
-	} else {
-		smg.precreatedStates = precreatedStates
-	}
-	return smg, nil
 }
 
 // Changes from current state to nextStateName
@@ -146,7 +131,7 @@ func (smg *StateMxnGeneric) Is(currentStateNameRegexp string) (bool, error) {
 func (smg *StateMxnGeneric) GetTransitionsMap() map[string][]string {
 	return smg.transitionsMap
 }
-func (smg *StateMxnGeneric) GetCurrentState() *State {
+func (smg *StateMxnGeneric) GetCurrentState() StateIfc {
 	return smg.currentState
 }
 
@@ -207,7 +192,7 @@ func (smg *StateMxnGeneric) verifyIfValidTransition(source_stateName string, des
 // - if precreatedStates contains that state, then return a copy of it
 // or
 // - create-and-store into precreatedStates a new state, and then return a copy of it
-func (smg *StateMxnGeneric) getStatecopyFromPrecreatedstatesOrNew(stateName string) (*State, error) {
+func (smg *StateMxnGeneric) getStatecopyFromPrecreatedstatesOrNew(stateName string) (StateIfc, error) {
 	// Performs some safety-validations:
 	// - if stateName is valid
 	{
@@ -234,4 +219,19 @@ func (smg *StateMxnGeneric) getStatecopyFromPrecreatedstatesOrNew(stateName stri
 		stateCopy := state.Deepcopy()
 		return stateCopy, nil
 	}
+}
+func (smg *StateMxnGeneric) newStateMxnGeneric(transitionsMap map[string][]string, precreatedStates map[string]StateIfc) (*StateMxnGeneric, error) {
+	// FutureImprovement: Assure transitionsMap is valid
+	// FutureImprovement: Assure precreatedStates is valid
+
+	// Define smg.transitionsMap
+	smg.transitionsMap = transitionsMap
+
+	// Define smg.precreatedStates from precreatedStates or from a new map
+	if precreatedStates == nil {
+		smg.precreatedStates = make(map[string]StateIfc)
+	} else {
+		smg.precreatedStates = precreatedStates
+	}
+	return smg, nil
 }

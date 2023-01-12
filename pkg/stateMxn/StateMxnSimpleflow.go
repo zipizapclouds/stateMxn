@@ -1,5 +1,7 @@
 package stateMxn
 
+import "fmt"
+
 /*
 StateMxnSimpleflow
 
@@ -17,8 +19,10 @@ The state machine will take each state, execute its handlers with state.Activate
 So overall, this statemachine should take some precreated states, each with 2 transitions and 1-or-more-handlersExec, and will automatically
 progress the execution from state to state, until it reaches a finalstate, or an error occurs.
 
-There is no smsf.Change() method, because the state machine will start executing the initial state when NewStateMxnSimpleFlow() is called, and
-then will automatically progress through the states, until it reaches a final state or an error occurs.
+The smf.ChangeToInitialStateAndAutoprogressToOtherStates() method should be used to start the state machine, and it will automatically progress through
+the states, until it reaches a final state or an error occurs.
+
+The smsf.Change() method should not be used - use smsf.ChangeToInitialStateAndAutoprogressToOtherStates() instead.
 
 Examples: see main.go example4
 */
@@ -27,12 +31,12 @@ type StateMxnSimpleflow struct {
 }
 
 // Will create a new StateMxnSimpleflow, and will automatically progress through the states, until it reaches a final state or an error occurs.
-func NewStateMxnSimpleFlow(transitionsMap map[string][]string, precreatedStates map[string]*State) (*StateMxnSimpleflow, error) {
+func NewStateMxnSimpleFlow(transitionsMap map[string][]string, precreatedStates map[string]StateIfc) (*StateMxnSimpleflow, error) {
 	smsf := &StateMxnSimpleflow{}
 	return smsf.newStateMxnSimpleFlow(transitionsMap, precreatedStates)
 
 }
-func (smsf *StateMxnSimpleflow) newStateMxnSimpleFlow(transitionsMap map[string][]string, precreatedStates map[string]*State) (*StateMxnSimpleflow, error) {
+func (smsf *StateMxnSimpleflow) newStateMxnSimpleFlow(transitionsMap map[string][]string, precreatedStates map[string]StateIfc) (*StateMxnSimpleflow, error) {
 	// call constructor for StateMxnGeneric
 	_, err := smsf.newStateMxnGeneric(transitionsMap, precreatedStates)
 	if err != nil {
@@ -61,7 +65,7 @@ func (smsf *StateMxnSimpleflow) ChangeToInitialStateAndAutoprogressToOtherStates
 	a_state := initialstateName
 	for {
 		hasOkNokTransitions, OkStatename, NokStatename := hasOkNokTransitionsFunc(a_state)
-		serr := smsf.Change(a_state)
+		serr := smsf.StateMxnGeneric.Change(a_state)
 		// NOTE: serr may come from handler-error or another-error. We assume its a handler-error without additional checks
 		if serr == nil {
 			if !hasOkNokTransitions {
@@ -77,4 +81,8 @@ func (smsf *StateMxnSimpleflow) ChangeToInitialStateAndAutoprogressToOtherStates
 			a_state = NokStatename
 		}
 	}
+}
+
+func (smf *StateMxnSimpleflow) Change(stateName string) error {
+	return fmt.Errorf("Change() method is not allowed for StateMxnSimpleflow. Use ChangeToInitialStateAndAutoprogressToOtherStates() instead")
 }

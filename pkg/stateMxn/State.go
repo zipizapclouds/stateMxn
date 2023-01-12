@@ -7,6 +7,24 @@ import (
 	"github.com/mohae/deepcopy"
 )
 
+// NOTE:
+//
+//	    StateIfc should be a pointer-to-a-state-object
+//		Ex: (*State) implements a StateIfc but (State) does not implement a StateIfc
+type StateIfc interface {
+	GetName() string
+	GetInputs() StateInputs
+	GetOutputs() StateOutputs
+	GetError() error
+	GetData() StateData
+	AddHandlerBegin(handler StateHandler)
+	AddHandlerExec(handler StateHandler)
+	AddHandlerEnd(handler StateHandler)
+	Activate(smData StateMxnData, inputs StateInputs) (outputs StateOutputs, err error)
+	Is(stateNameRegexp string) (bool, error)
+	Deepcopy() StateIfc
+}
+
 // read inputs, write outputs, read/write data
 type StateHandler func(inputs StateInputs, outputs StateOutputs, stateData StateData, smachineData StateMxnData) error
 
@@ -24,15 +42,15 @@ func (so *StateOutputs) Convert2Inputs() StateInputs {
 
 type StateData map[string]interface{}
 
-type HistoryOfStates []*State
+type HistoryOfStates []StateIfc
 
 // Returns string with ordered states
 func (hos HistoryOfStates) DisplayStatesFlow() string {
 	var str string
 	for _, state := range hos {
 		str += state.GetName() + "\t[" + state.GetData()["timeElapsed"].(time.Duration).String() + "]"
-		if state.err != nil {
-			str += "\t!ERROR: " + state.err.Error()
+		if serr := state.GetError(); serr != nil {
+			str += "\t!ERROR: " + serr.Error()
 		}
 		str += "\n"
 	}
@@ -81,11 +99,17 @@ func NewState(name string) *State {
 func (s *State) GetName() string {
 	return s.name
 }
-func (s *State) GetData() StateData {
-	return s.data
+func (s *State) GetInputs() StateInputs {
+	return s.inputs
 }
 func (s *State) GetOutputs() StateOutputs {
 	return s.outputs
+}
+func (s *State) GetError() error {
+	return s.err
+}
+func (s *State) GetData() StateData {
+	return s.data
 }
 
 // Appends a handler to the list of begin-handlers
@@ -157,7 +181,7 @@ func (s *State) Is(stateNameRegexp string) (bool, error) {
 	return regexp.MatchString(stateNameRegexp, s.name)
 }
 
-func (s *State) Deepcopy() *State {
+func (s *State) Deepcopy() StateIfc {
 	// NOTE: deepcopy libs like https://github.com/barkimedes/go-deepcopy or https://github.com/mohae/deepcopy
 	//       dont copy unexported fields - so we need to define our own deepcopy() method
 	// 	     for the type, in the package where the type is defined

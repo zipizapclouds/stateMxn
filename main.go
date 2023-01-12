@@ -162,7 +162,7 @@ func stateMxnGeneric_example3() {
 				return nil
 			})
 	}
-	precreatedStates := map[string]*stateMxn.State{
+	precreatedStates := map[string]stateMxn.StateIfc{
 		"Running": runningState,
 	}
 
@@ -254,7 +254,7 @@ func stateMxnGeneric_example4() {
 		})
 
 	// Precreated states
-	precreatedStates := map[string]*stateMxn.State{
+	precreatedStates := map[string]stateMxn.StateIfc{
 		runningAlphaState.GetName(): runningAlphaState,
 		runningBetaState.GetName():  runningBetaState,
 	}
