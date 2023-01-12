@@ -25,6 +25,7 @@ Features that exist in any StateMxnGeneric:
   - Use `smg.Is("^Finished"")` to check if the state-machine is in a specific state (regexp)
 */
 type StateMxnGeneric struct {
+	smxName        string
 	transitionsMap map[string][]string
 
 	precreatedStates map[string]StateIfc // map[<statename>]*State
@@ -34,10 +35,13 @@ type StateMxnGeneric struct {
 }
 
 // precreatedStates can be nil
-func NewStateMxnGeneric(transitionsMap map[string][]string, precreatedStates map[string]StateIfc) (*StateMxnGeneric, error) {
+func NewStateMxnGeneric(smxName string, transitionsMap map[string][]string, precreatedStates map[string]StateIfc) (*StateMxnGeneric, error) {
 	smg := &StateMxnGeneric{}
 	// FutureImprovement: Assure transitionsMap is valid
 	// FutureImprovement: Assure precreatedStates is valid
+
+	// Define smg.smxName
+	smg.smxName = smxName
 
 	// Define smg.transitionsMap
 	smg.transitionsMap = transitionsMap
@@ -138,6 +142,11 @@ func (smg *StateMxnGeneric) Change(nextStateName string) error {
 //   - regexp "Finished" 					matches Name "FinisedOk" or "FinishedNok"
 func (smg *StateMxnGeneric) Is(currentStateNameRegexp string) (bool, error) {
 	return smg.GetCurrentState().Is(currentStateNameRegexp)
+}
+
+func (smg *StateMxnGeneric) GetName() (smxName string) {
+	smxName = smg.smxName
+	return smxName
 }
 
 func (smg *StateMxnGeneric) GetTransitionsMap() map[string][]string {

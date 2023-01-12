@@ -31,10 +31,10 @@ type StateMxnSimpleflow struct {
 }
 
 // Will create a new StateMxnSimpleflow, and will automatically progress through the states, until it reaches a final state or an error occurs.
-func NewStateMxnSimpleFlow(transitionsMap map[string][]string, precreatedStates map[string]StateIfc) (*StateMxnSimpleflow, error) {
+func NewStateMxnSimpleFlow(smxName string, transitionsMap map[string][]string, precreatedStates map[string]StateIfc) (*StateMxnSimpleflow, error) {
 	smsf := &StateMxnSimpleflow{}
 	// call constructor for StateMxnGeneric
-	smg, err := NewStateMxnGeneric(transitionsMap, precreatedStates)
+	smg, err := NewStateMxnGeneric(smxName, transitionsMap, precreatedStates)
 	smsf.StateMxnGeneric = smg
 	if err != nil {
 		return smsf, err

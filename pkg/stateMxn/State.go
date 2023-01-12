@@ -2,6 +2,7 @@ package stateMxn
 
 import (
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/mohae/deepcopy"
@@ -53,6 +54,15 @@ func (hos HistoryOfStates) DisplayStatesFlow() string {
 			str += "\t!ERROR: " + serr.Error()
 		}
 		str += "\n"
+
+		if enclosedSmx, ok := state.GetData()["enclosedSmx"].(*StateMxnGeneric); ok {
+			identation := "\t"
+			eStr := "+++++ " + enclosedSmx.GetName() + " +++++\n" +
+				enclosedSmx.GetHistoryOfStates().DisplayStatesFlow() +
+				"----- " + enclosedSmx.GetName() + " -----\n"
+			eStr = identLinesInString(identation, eStr)
+			str += eStr
+		}
 	}
 	return str
 }
@@ -68,11 +78,13 @@ type State struct {
 	err     error        // error from any handler
 
 	// data is a map where handlers can store any data meaningfull for the state, and
-	// made publicly readable with state.GetData()
+	// made publicly accesible with state.GetData()
 	// --- timestamps ---
 	// data["timeStart"]
 	// data["timeEnd"]
 	// data["timeElapsed"]
+	//
+	// data["enclosedSmx"] *StateMxn  - if the state has an enclosed state machine, then it will be stored here
 	data StateData
 
 	// handlers["begin"]
@@ -211,4 +223,17 @@ func (s *State) addDefaultHandlers() {
 	}
 	s.AddHandlerBegin(timeStartHandlerBegin)
 	s.AddHandlerEnd(timeEndHandlerEnd)
+}
+
+// https://github.com/openconfig/goyang/blob/v1.2.0/pkg/indent/indent.go#L25
+// Returns s with each line in s prefixed by indent.
+func identLinesInString(indent, s string) string {
+	if indent == "" || s == "" {
+		return s
+	}
+	lines := strings.SplitAfter(s, "\n")
+	if len(lines[len(lines)-1]) == 0 {
+		lines = lines[:len(lines)-1]
+	}
+	return strings.Join(append([]string{""}, lines...), indent)
 }

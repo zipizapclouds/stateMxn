@@ -31,7 +31,7 @@ func stateMxnGeneric_example1() {
 		"Running": {"FinishedOk", "FinishedNok"},
 	}
 	initialStateName := "Init"
-	smg, err := stateMxn.NewStateMxnGeneric(transitionsMap, nil)
+	smg, err := stateMxn.NewStateMxnGeneric("Example1", transitionsMap, nil)
 	logFatalIfError(err)
 
 	// Start by changing to the initial state
@@ -89,7 +89,7 @@ func stateMxnGeneric_example2() {
 			"FinishedNok"},
 	}
 	initialStateName := "Init_TriggerB"
-	smg, err := stateMxn.NewStateMxnGeneric(transitionsMap, nil)
+	smg, err := stateMxn.NewStateMxnGeneric("Example2", transitionsMap, nil)
 	logFatalIfError(err)
 	err = smg.Change(initialStateName)
 	logFatalIfError(err)
@@ -167,7 +167,7 @@ func stateMxnGeneric_example3() {
 	}
 
 	// Now lets create the statemachine passing the precreated states
-	smg, err := stateMxn.NewStateMxnGeneric(transitionsMap, precreatedStates)
+	smg, err := stateMxn.NewStateMxnGeneric("Example3", transitionsMap, precreatedStates)
 	logFatalIfError(err)
 	err = smg.Change(initialStateName)
 	logFatalIfError(err)
@@ -260,7 +260,7 @@ func stateMxnGeneric_example4() {
 	}
 
 	// Now lets create the statemachine passing the precreated states
-	smsf, err := stateMxn.NewStateMxnSimpleFlow(transitionsMap, precreatedStates)
+	smsf, err := stateMxn.NewStateMxnSimpleFlow("Example4", transitionsMap, precreatedStates)
 	logFatalIfError(err)
 	err = smsf.ChangeToInitialStateAndAutoprogressToOtherStates(initialStateName)
 	logFatalIfError(err)
@@ -276,7 +276,7 @@ func stateMxnGeneric_example4() {
 }
 
 func stateMxnGeneric_example5() {
-	// SmxOutter includes a state stateEnclosingSmxInner, which when executed will progresess-states of SmxInner
+	// SmxOutter includes a state stateEnclosingSmxInner, which when executed will progress-states of SmxInner
 	//
 	// ===== SmxOutter: States and Tansitions =====
 	// Init
@@ -294,7 +294,7 @@ func stateMxnGeneric_example5() {
 
 	fmt.Println("===== stateMxnGeneric_example5 =====")
 
-	// Create SmxInner
+	// Create smxInner
 	var smxInner *stateMxn.StateMxnGeneric
 	{
 		transitionsMap := map[string][]string{
@@ -302,27 +302,24 @@ func stateMxnGeneric_example5() {
 			"Running": {"FinishedOk", "FinishedNok"},
 		}
 		var err error
-		smxInner, err = stateMxn.NewStateMxnGeneric(transitionsMap, nil)
+		smxInner, err = stateMxn.NewStateMxnGeneric("Example5-SmxInner", transitionsMap, nil)
 		logFatalIfError(err)
 	}
 
-	// Create SmxOutter, including state stateEnclosingSmxInner with a handler to call SmxInner
-	var smxOutter *stateMxn.StateMxnGeneric
+	// Create stateEnclosingSmxInner, with:
+	// - state data["enclosedSmx"] = smxInner , to pass smxInner to handler
+	// - handler to progress the state-changes of smxInner
+	var stateEnclosingSmxInner *stateMxn.State
 	{
-		transitionsMap := map[string][]string{
-			"Init":                   {"stateEnclosingSmxInner", "FinishedNok"},
-			"stateEnclosingSmxInner": {"FinishedOk", "FinishedNok"},
-		}
-
-		// Create stateEnclosingSmxInner, with handler to progress the state-changes of SmxInner
-		stateEnclosingSmxInner := stateMxn.NewState("stateEnclosingSmxInner")
+		stateEnclosingSmxInner = stateMxn.NewState("stateEnclosingSmxInner")
+		stateEnclosingSmxInner.GetData()["enclosedSmx"] = smxInner
 		stateEnclosingSmxInner.AddHandlerExec(
 			func(inputs stateMxn.StateInputs, outputs stateMxn.StateOutputs, stateData stateMxn.StateData, smData stateMxn.StateMxnData) error {
 				////////////////////////////////////////////
 				// SmxInner: progress the state-changes
 				////////////////////////////////////////////
 
-				// NOTE: smxInner variable is visible here via closure
+				smxInner = stateData["enclosedSmx"].(*stateMxn.StateMxnGeneric)
 
 				// Change state: initial-state
 				initialStateName := "Init"
@@ -348,6 +345,15 @@ func stateMxnGeneric_example5() {
 
 				return nil
 			})
+	}
+
+	// Create smxOutter, with stateEnclosingSmxInner included in precreatedStates
+	var smxOutter *stateMxn.StateMxnGeneric
+	{
+		transitionsMap := map[string][]string{
+			"Init":                   {"stateEnclosingSmxInner", "FinishedNok"},
+			"stateEnclosingSmxInner": {"FinishedOk", "FinishedNok"},
+		}
 
 		// Create precreatedStates containing stateEnclosingSmxInner
 		precreatedStates := map[string]stateMxn.StateIfc{
@@ -356,11 +362,11 @@ func stateMxnGeneric_example5() {
 
 		// Create smxOutter
 		var err error
-		smxOutter, err = stateMxn.NewStateMxnGeneric(transitionsMap, precreatedStates)
+		smxOutter, err = stateMxn.NewStateMxnGeneric("Example5-SmxOutter", transitionsMap, precreatedStates)
 		logFatalIfError(err)
 	}
 
-	// SmxOutter: progress the state-changes
+	// smxOutter: progress the state-changes
 	{
 		// Change state: "Init"
 		initialStateName := "Init"
@@ -381,8 +387,8 @@ func stateMxnGeneric_example5() {
 		err = smxOutter.Change(nextState)
 		logFatalIfError(err)
 		fmt.Println("SmxOutter \t currentStateName:", smxOutter.GetCurrentState().GetName()) // "FinishedOk"
-
 	}
+	fmt.Println(smxOutter.GetHistoryOfStates().DisplayStatesFlow())
 }
 
 func main() {
