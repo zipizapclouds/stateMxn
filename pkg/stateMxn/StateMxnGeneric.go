@@ -11,11 +11,14 @@ type StateMxnData map[string]interface{}
 /*
 Features that exist in any StateMxnGeneric:
 
-- per-stage-handlers: each stage can have a handlerBegin, handlerExec and handlerEnd. The execution order is: handlerBegin, handlerExec, handlerEnd
+  - per-state-handlers: each state can have a handlerBegin, handlerExec and handlerEnd. The execution order is: handlerBegin, handlerExec, handlerEnd.
+    Both handlerBegin and handlerEnd are optional, and both will always execute even when handlerExec errors.
 
-- stage-output-input chaining: the *ouput* from a state is copied to the *input* of the next state
+- state-output-input chaining: the *ouput* from a state is copied to the *input* of the next state
 
-- stage-data: each state has a data map[string]interface{} where you can store any data meaningfull for that state
+- state-data: each state has a data map[string]interface{} where you can store any internal-state-data meaningfull for that state
+
+- smachine-data: each smachine has a data map[string]interface{} where you can store any inter-state-data meaningfull for states of that smachine
 
 # Use `smg.GetHistoryOfStates().DisplayStatesFlow()` to display the state-flow of the state-machine
 
