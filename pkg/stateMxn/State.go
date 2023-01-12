@@ -22,7 +22,7 @@ type StateIfc interface {
 	AddHandlerEnd(handler StateHandler)
 	activate(smData StateMxnData, inputs StateInputs) (outputs StateOutputs, err error)
 	Is(stateNameRegexp string) (bool, error)
-	deepcopy() StateIfc
+	copy() StateIfc
 }
 
 // read inputs, write outputs, read/write data
@@ -131,6 +131,7 @@ func (s *State) AddHandlerEnd(handler StateHandler) {
 // If there is an error in any begin-handler, it will return it and not execute the exec-handlers nor end-handlers
 // If there is an error in any exec-handler, then it will still execute the end-handlers and then return the error
 func (s *State) activate(smData StateMxnData, inputs StateInputs) (outputs StateOutputs, err error) {
+	// inputs deepcopied to assure that the state will not modify the inputs
 	s.inputs = deepcopy.Copy(inputs).(StateInputs)
 
 	// Executes all begin-handlers
@@ -181,7 +182,7 @@ func (s *State) Is(stateNameRegexp string) (bool, error) {
 	return regexp.MatchString(stateNameRegexp, s.name)
 }
 
-func (s *State) deepcopy() StateIfc {
+func (s *State) copy() StateIfc {
 	// NOTE: deepcopy libs like https://github.com/barkimedes/go-deepcopy or https://github.com/mohae/deepcopy
 	//       dont copy unexported fields - so we need to define our own deepcopy() method
 	// 	     for the type, in the package where the type is defined
@@ -189,10 +190,11 @@ func (s *State) deepcopy() StateIfc {
 	// all truct fields, both exported and unexported, need to be copied here
 	stateCopy := &State{
 		name:     s.name,
-		inputs:   deepcopy.Copy(s.inputs).(StateInputs),
-		outputs:  deepcopy.Copy(s.outputs).(StateOutputs),
-		data:     deepcopy.Copy(s.data).(StateData),
-		handlers: deepcopy.Copy(s.handlers).(map[string][]StateHandler),
+		inputs:   s.inputs,   // deepcopy.Copy(s.inputs).(StateInputs),
+		outputs:  s.outputs,  // deepcopy.Copy(s.outputs).(StateOutputs),
+		err:      s.err,      // deepcopy.Copy(s.err).(error),
+		data:     s.data,     // deepcopy.Copy(s.data).(StateData),
+		handlers: s.handlers, // deepcopy.Copy(s.handlers).(map[string][]StateHandler),
 	}
 	return stateCopy
 }

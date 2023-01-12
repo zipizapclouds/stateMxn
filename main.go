@@ -275,10 +275,121 @@ func stateMxnGeneric_example4() {
 	fmt.Println(smsf.GetHistoryOfStates().DisplayStatesFlow())
 }
 
+func stateMxnGeneric_example5() {
+	// SmxOutter includes a state stateEnclosingSmxInner, which when executed will progresess-states of SmxInner
+	//
+	// ===== SmxOutter: States and Tansitions =====
+	// Init
+	//   |--> stateEnclosingSmxInner
+	//           |------------> FinishedOk
+	//		     |------------> FinishedNok
+	//   |--------------------> FinishedNok
+	//
+	// ===== SmxInner: States and Tansitions =====
+	// Init
+	//   |--> Running
+	//           |------------> FinishedOk
+	//		     |------------> FinishedNok
+	//   |--------------------> FinishedNok
+
+	fmt.Println("===== stateMxnGeneric_example5 =====")
+
+	// Create SmxInner
+	var smxInner *stateMxn.StateMxnGeneric
+	{
+		transitionsMap := map[string][]string{
+			"Init":    {"Running", "FinishedNok"},
+			"Running": {"FinishedOk", "FinishedNok"},
+		}
+		var err error
+		smxInner, err = stateMxn.NewStateMxnGeneric(transitionsMap, nil)
+		logFatalIfError(err)
+	}
+
+	// Create SmxOutter, including state stateEnclosingSmxInner with a handler to call SmxInner
+	var smxOutter *stateMxn.StateMxnGeneric
+	{
+		transitionsMap := map[string][]string{
+			"Init":                   {"stateEnclosingSmxInner", "FinishedNok"},
+			"stateEnclosingSmxInner": {"FinishedOk", "FinishedNok"},
+		}
+
+		// Create stateEnclosingSmxInner, with handler to progress the state-changes of SmxInner
+		stateEnclosingSmxInner := stateMxn.NewState("stateEnclosingSmxInner")
+		stateEnclosingSmxInner.AddHandlerExec(
+			func(inputs stateMxn.StateInputs, outputs stateMxn.StateOutputs, stateData stateMxn.StateData, smData stateMxn.StateMxnData) error {
+				////////////////////////////////////////////
+				// SmxInner: progress the state-changes
+				////////////////////////////////////////////
+
+				// NOTE: smxInner variable is visible here via closure
+
+				// Change state: initial-state
+				initialStateName := "Init"
+				err := smxInner.Change(initialStateName)
+				if err != nil {
+					return err
+				}
+				fmt.Println("SmxInner \t currentStateName:", smxInner.GetCurrentState().GetName()) // "Init"
+
+				// Change state
+				err = smxInner.Change("Running")
+				if err != nil {
+					return err
+				}
+				fmt.Println("SmxInner \t currentStateName:", smxInner.GetCurrentState().GetName()) // "Running"
+
+				// Change state
+				err = smxInner.Change("FinishedOk")
+				if err != nil {
+					return err
+				}
+				fmt.Println("SmxInner \t currentStateName:", smxInner.GetCurrentState().GetName()) // "FinishedOk"
+
+				return nil
+			})
+
+		// Create precreatedStates containing stateEnclosingSmxInner
+		precreatedStates := map[string]stateMxn.StateIfc{
+			stateEnclosingSmxInner.GetName(): stateEnclosingSmxInner,
+		}
+
+		// Create smxOutter
+		var err error
+		smxOutter, err = stateMxn.NewStateMxnGeneric(transitionsMap, precreatedStates)
+		logFatalIfError(err)
+	}
+
+	// SmxOutter: progress the state-changes
+	{
+		// Change state: "Init"
+		initialStateName := "Init"
+		err := smxOutter.Change(initialStateName)
+		logFatalIfError(err)
+		fmt.Println("SmxOutter \t currentStateName:", smxOutter.GetCurrentState().GetName()) // "Init"
+
+		// Change state: "stateEnclosingSmxInner"
+		nextState := "stateEnclosingSmxInner"
+		fmt.Printf("SmxOutter \t changing from '%s' --> '%s'\n", smxOutter.GetCurrentState().GetName(), nextState)
+		err = smxOutter.Change(nextState)
+		logFatalIfError(err)
+		fmt.Println("SmxOutter \t currentStateName:", smxOutter.GetCurrentState().GetName()) // "stateEnclosingSmxInner"
+
+		// Change state: "FinishedOk"
+		nextState = "FinishedOk"
+		fmt.Printf("SmxOutter \t changing from '%s' --> '%s'\n", smxOutter.GetCurrentState().GetName(), nextState)
+		err = smxOutter.Change(nextState)
+		logFatalIfError(err)
+		fmt.Println("SmxOutter \t currentStateName:", smxOutter.GetCurrentState().GetName()) // "FinishedOk"
+
+	}
+}
+
 func main() {
 	stateMxnGeneric_example1()
 	stateMxnGeneric_example2()
 	stateMxnGeneric_example3()
 	stateMxnGeneric_example4()
+	stateMxnGeneric_example5()
 
 }

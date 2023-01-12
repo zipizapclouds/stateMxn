@@ -220,7 +220,7 @@ func (smg *StateMxnGeneric) getStatecopyFromPrecreatedstatesOrNew(stateName stri
 	// - create-and-store into precreatedStates a new state, and then return a copy of it
 	if stateCandidate, ok := smg.precreatedStates[stateName]; ok {
 		// precreatedStates contains that state, lets return a copy of it
-		stateCopy := stateCandidate.deepcopy()
+		stateCopy := stateCandidate.copy()
 		return stateCopy, nil
 	} else {
 		// precreatedStates does not contain that state
@@ -228,7 +228,7 @@ func (smg *StateMxnGeneric) getStatecopyFromPrecreatedstatesOrNew(stateName stri
 		state := NewState(stateName)
 		smg.precreatedStates[stateName] = state
 
-		stateCopy := state.deepcopy()
+		stateCopy := state.copy()
 		return stateCopy, nil
 	}
 }
