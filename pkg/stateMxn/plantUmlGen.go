@@ -2,8 +2,8 @@ package stateMxn
 
 import (
 	"fmt"
-	"regexp"
 	"strconv"
+	"time"
 
 	"github.com/trislu/plantuml"
 )
@@ -27,6 +27,10 @@ func plantUmlGen(smx *StateMxnGeneric, opts *plantUmlGenOpts) (text string, diag
 			scale 3/4
 
 			[*] -> State1
+			note as N1
+				asasd
+				na aasd asdasd
+			end note
 			State1 --> State2 : Succeeded
 			State1 --> [*] : Aborted
 			State2 --> State3 : Succeeded
@@ -65,37 +69,81 @@ skinparam sequenceReferenceAlign left
 		// define body
 		var body string
 		{
-			inputFormatter := func(o StateInputs) string {
-				return fmt.Sprintf("%v", o)
-			}
-			outputFormatter := func(o StateOutputs) string {
-				return fmt.Sprintf("%v", o)
-			}
-			dataFormatter := func(d StateData) string {
-				// strWithEol := spew.Sdump(d)
-				// strWithEolEscaped := regexp.MustCompile("\n").ReplaceAllString(strWithEol, `\n`)
-				// return strWithEolEscaped
-				// >> Seems PlantUml cannot process all that
-
-				str := ""
-				for k, v := range d {
-					if k == "timeEnd" || k == "timeStart" {
+			type specialKeysType map[string]func(k string, v interface{}, mapName string) string
+			mapStringInterfaceFormatter := func(m map[string]interface{}, mapName string, specialKeys specialKeysType, eol string) (str string) {
+				str = ""
+				for k, v := range m {
+					// if k is in specialCases, use the specialCases[k] function
+					if f, ok := specialKeys[k]; ok {
+						str += f(k, v, mapName)
 						continue
 					}
-					str += "state.data[" + k + "]: " + fmt.Sprintf("%+v", v) + `\n`
+
+					// switch branches to handle different types of the v variable
+					// There is one branch matching all the basic types
+					// and one branch for all the other types
+					switch v.(type) {
+					case string, int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64, complex64, complex128, bool, time.Duration:
+						// basic types and some other specific types
+						// will have its value showned with %v
+						str += mapName + "[" + k + "]: " + fmt.Sprintf("%v", v) + eol
+					default:
+						// other types will have the type showned with %T
+						str += mapName + "[" + k + "]: " + fmt.Sprintf("(%T)", v) + eol
+					}
 				}
 				return str
 			}
-			replace2alphanum := func(s string) string {
-				return regexp.MustCompile(`[^a-zA-Z0-9]+`).ReplaceAllString(s, "_")
+			inputFormatter := func(o StateInputs) string {
+				return mapStringInterfaceFormatter(o, "inputs", make(specialKeysType), `\n`)
+			}
+			outputFormatter := func(o StateOutputs) string {
+				return mapStringInterfaceFormatter(o, "outputs", make(specialKeysType), `\n`)
+			}
+			sdataFormatter := func(d StateData) string {
+				str := mapStringInterfaceFormatter(
+					d,
+					"state.data",
+					specialKeysType(map[string]func(k string, v interface{}, mapName string) string{
+						"enclosedSmx": func(k string, v interface{}, mapName string) string {
+							return mapName + "[" + k + "]: " + fmt.Sprintf("%s (%T)", v.(*StateMxnGeneric).GetName(), v) + `\n`
+						},
+						"timeEnd":   func(k string, v interface{}, mapName string) string { return "" },
+						"timeStart": func(k string, v interface{}, mapName string) string { return "" },
+					}),
+					`\n`,
+				)
+				return str
+			}
+			smxdataFormatter := func(d StateMxnData) string {
+				str := mapStringInterfaceFormatter(
+					d,
+					"smx.data",
+					specialKeysType(map[string]func(k string, v interface{}, mapName string) string{}),
+					"\n",
+				)
+				return str
 			}
 
-			initialStateName := smx.GetName() + "_0_" + smx.historyOfStates[0].GetName()
+			initialStateName := smx.GetName() + "_0" + smx.historyOfStates[0].GetName()
 			initialStateName = replace2alphanum(initialStateName)
 			initialStateInputs := smx.historyOfStates[0].GetInputs()
-			body = "[*] --> " + initialStateName + " : " + inputFormatter(initialStateInputs) + "\n"
+			body = "[*] --> " + initialStateName
+			{
+				if iinputsTxt := inputFormatter(initialStateInputs); len(iinputsTxt) > 0 {
+					body += " : " + iinputsTxt
+				}
+				body += "\n"
+			}
+			// add smx.data as floating note, if its not empty
+			{
+				smxData := smx.GetData()
+				if len(smxData) > 0 {
+					body += "note as " + smx.GetName() + "\n" + identLinesInString("  ", smxdataFormatter(smxData)) + "\nend note\n"
+				}
+			}
 			for i := 1; i <= len(smx.historyOfStates); i++ {
-				prevStateName := smx.GetName() + "_" + strconv.Itoa(i-1) + "_" + smx.historyOfStates[i-1].GetName()
+				prevStateName := smx.GetName() + "_" + strconv.Itoa(i-1) + "" + smx.historyOfStates[i-1].GetName()
 				prevStateName = replace2alphanum(prevStateName)
 				prevStateData := smx.historyOfStates[i-1].GetData()
 				prevStateOutputs := smx.historyOfStates[i-1].GetOutputs()
@@ -112,21 +160,65 @@ skinparam sequenceReferenceAlign left
 					if i == len(smx.historyOfStates) {
 						nextStateName = "[*]"
 					} else {
-						nextStateName = smx.GetName() + "_" + strconv.Itoa(i) + "_" + smx.historyOfStates[i].GetName()
+						nextStateName = smx.GetName() + "_" + strconv.Itoa(i) + smx.historyOfStates[i].GetName()
 						nextStateName = replace2alphanum(nextStateName)
 					}
 				}
-				body += prevStateName + " --> " + nextStateName + " : " + prevStateOutputsStr + prevStateErr + "\n"
-				body += prevStateName + " : " + dataFormatter(prevStateData) + "\n"
+				// prevStateName --> nextStateName : prevStateOutputsStr + prevStateErr \n
+				{
+					body += prevStateName + " --> " + nextStateName
+					if len(prevStateOutputsStr+prevStateErr) > 0 {
+						body += " : " + prevStateOutputsStr + prevStateErr
+					}
+					body += "\n"
+				}
+				// prevStateName : prevStateData \n
+				{
+					body += prevStateName
+					if len(sdataFormatter(prevStateData)) > 0 {
+						body += " : " + sdataFormatter(prevStateData)
+					}
+					body += "\n"
+				}
 				if eSmx, ok := prevStateData["enclosedSmx"]; ok {
 					eSmx := eSmx.(*StateMxnGeneric)
 					eSmxText, _ := plantUmlGen(eSmx, &plantUmlGenOpts{stripHeaderFooter: true})
 					body += "state " + prevStateName + " ##[bold]green {\n" + identLinesInString("    ", eSmxText) + "\n}\n"
 				}
+
 			}
 		}
 		text = header + body + footer
 	}
+
+	// define diagramUrl
+	diagramUrl = `http://www.plantuml.com/plantuml/img/` + plantuml.Encode(text)
+
+	return text, diagramUrl
+}
+
+func plantUmlGen4TransitionsMap(transitionsMap map[string][]string) (text string, diagramUrl string) {
+	var header, footer string
+	{
+		header = `
+@startuml
+scale 5/8
+skinparam sequenceMessageAlign left
+skinparam sequenceReferenceAlign left
+`
+		footer = "\n@enduml\n"
+	}
+
+	var body string
+	{
+		body = ""
+		for fromState, toStates := range transitionsMap {
+			for _, toState := range toStates {
+				body += fromState + " -[dotted]-> " + toState + "\n"
+			}
+		}
+	}
+	text = header + body + footer
 
 	// define diagramUrl
 	diagramUrl = `http://www.plantuml.com/plantuml/img/` + plantuml.Encode(text)

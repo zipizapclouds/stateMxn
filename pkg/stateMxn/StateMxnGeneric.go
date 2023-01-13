@@ -52,6 +52,13 @@ func NewStateMxnGeneric(smxName string, transitionsMap map[string][]string, prec
 	} else {
 		smg.precreatedStates = precreatedStates
 	}
+
+	// Define smg.historyOfStates
+	smg.historyOfStates = make(HistoryOfStates, 0)
+
+	// Define smg.data
+	smg.data = make(StateMxnData)
+
 	return smg, nil
 }
 
@@ -149,8 +156,10 @@ func (smg *StateMxnGeneric) GetName() (smxName string) {
 	return smxName
 }
 
-func (smg *StateMxnGeneric) GetTransitionsMap() map[string][]string {
-	return smg.transitionsMap
+func (smg *StateMxnGeneric) GetTransitionsMap() (tMap map[string][]string, tMapPlantUmlText string, tMapPlantUmlUrl string) {
+	tMap = smg.transitionsMap
+	tMapPlantUmlText, tMapPlantUmlUrl = plantUmlGen4TransitionsMap(tMap)
+	return tMap, tMapPlantUmlText, tMapPlantUmlUrl
 }
 func (smg *StateMxnGeneric) GetCurrentState() StateIfc {
 	return smg.currentState
@@ -167,6 +176,10 @@ func (smg *StateMxnGeneric) GetData() StateMxnData {
 func (smg *StateMxnGeneric) GetPlantUml() (plantUmlText string, plantUmlUrl string) {
 	plantUmlText, plantUmlUrl = plantUmlGen(smg, nil)
 	return plantUmlText, plantUmlUrl
+}
+func (smg *StateMxnGeneric) GetPlantUmlTransitionMap() (tm_plantUmlText string, tm_plantUmlUrl string) {
+	tm_plantUmlText, tm_plantUmlUrl = plantUmlGen4TransitionsMap(smg.transitionsMap)
+	return tm_plantUmlText, tm_plantUmlUrl
 }
 
 // Returns if stateName is a valid source or destination state (ie, either in the transitions map keys or in the transitions map values)

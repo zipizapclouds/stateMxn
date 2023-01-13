@@ -51,11 +51,12 @@ func NewStateMxnSimpleFlow(smxName string, transitionsMap map[string][]string, p
 // It will return the error, if any.
 func (smsf *StateMxnSimpleflow) ChangeToInitialStateAndAutoprogressToOtherStates(initialstateName string) error {
 	hasOkNokTransitionsFunc := func(stateName string) (hasOkNokTransitions bool, OkStatename string, NokStatename string) {
-		if len(smsf.GetTransitionsMap()[stateName]) < 2 {
+		tMap, _, _ := smsf.GetTransitionsMap()
+		if len(tMap[stateName]) < 2 {
 			return false, "", ""
 		}
-		OkStatename = smsf.GetTransitionsMap()[stateName][0]
-		NokStatename = smsf.GetTransitionsMap()[stateName][len(smsf.GetTransitionsMap()[stateName])-1]
+		OkStatename = tMap[stateName][0]
+		NokStatename = tMap[stateName][len(tMap[stateName])-1]
 		return true, OkStatename, NokStatename
 	}
 

@@ -243,6 +243,7 @@ func stateMxnGeneric_example4() {
 		func(inputs stateMxn.StateInputs, outputs stateMxn.StateOutputs, stateData stateMxn.StateData, smData stateMxn.StateMxnData) error {
 			// do alpha processing...
 			outputs["fromAlpha"] = "This is the output from alpha"
+			outputs["fromAlpha int"] = 99
 			return nil
 		})
 	runningBetaState := stateMxn.NewState("RunningBeta")
@@ -395,10 +396,59 @@ func stateMxnGeneric_example5() {
 	}
 	fmt.Println(smxOutter.GetHistoryOfStates().DisplayStatesFlow())
 
-	// Get plantUmlText and plantUmlUrl for smxOutter, which also depics smxInner inside stateEnclosingSmxInner
-	plantUmlText, plantUmlUrl := smxOutter.GetPlantUml()
-	fmt.Println("plantUmlText:\t", plantUmlText)
-	fmt.Println("plantUmlUrl:\t", plantUmlUrl)
+	// Show plantUml diagrams
+	{
+		// 1.1) smxInner transitionMap
+		{
+			// smxInner_tmap_plantUmlText, smxInner_tmap_plantUmlUrl := smxInner.GetPlantUmlTransitionMap()
+			// fmt.Println(">> smxInner transitionsMap plantUmlText:\t", smxInner_tmap_plantUmlText)
+			_, smxInner_tmap_plantUmlUrl := smxInner.GetPlantUmlTransitionMap()
+			fmt.Println(">> smxInner transitionsMap plantUmlUrl: \t", smxInner_tmap_plantUmlUrl)
+		}
+
+		// 1.2) smxInner historyOfStates
+		{
+			// Lets add something into smxInner.data to see how it shows in plantUml
+			{
+				smxInner.GetData()["int"] = 77
+				smxInner.GetData()["struct"] = struct {
+					a string
+					b int
+					c bool
+				}{"a", 1, true}
+				smxInner.GetData()["structpointer"] = &struct {
+					a string
+				}{"a"}
+				smxInner.GetData()["map"] = map[string]int{
+					"one": 1,
+					"two": 2,
+				}
+			}
+			// smxInner_plantUmlText, smxInner_plantUmlUrl := smxInner.GetPlantUml()
+			// fmt.Println(">> smxInner historyOfStates plantUmlText:\t", smxInner_plantUmlText)
+			_, smxInner_plantUmlUrl := smxInner.GetPlantUml()
+			fmt.Println(">> smxInner historyOfStates plantUmlUrl: \t", smxInner_plantUmlUrl)
+		}
+
+		// 2.1) smxOutter transitionMap
+		{
+			// smxOutter_tmap_plantUmlText, smxOutter_tmap_plantUmlUrl := smxOutter.GetPlantUmlTransitionMap()
+			// fmt.Println(">> smxOutter transitionsMap plantUmlText:\t", smxOutter_tmap_plantUmlText)
+			_, smxOutter_tmap_plantUmlUrl := smxOutter.GetPlantUmlTransitionMap()
+			fmt.Println(">> smxOutter transitionsMap plantUmlUrl: \t", smxOutter_tmap_plantUmlUrl)
+		}
+
+		// 2.2) smxOutter historyOfStates, which also depics smxInner inside stateEnclosingSmxInner
+		{
+			// Lets add something into smxOutter.data to see how it shows in plantUml
+			// smxOutter.GetData()["string"] = "wow\nnice"
+			smxOutter_plantUmlText, smxOutter_plantUmlUrl := smxOutter.GetPlantUml()
+			fmt.Println(">> smxOutter historyOfStates plantUmlText:\t", smxOutter_plantUmlText)
+			// _, smxOutter_plantUmlUrl := smxOutter.GetPlantUml()
+			fmt.Println(">> smxOutter historyOfStates plantUmlUrl: \t", smxOutter_plantUmlUrl)
+		}
+	}
+
 }
 
 func main() {
