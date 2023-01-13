@@ -13,7 +13,7 @@ type plantUmlGenOpts struct {
 }
 
 // opts can be nil
-func plantUmlGen(smx *StateMxnGeneric, opts *plantUmlGenOpts) (text string, diagramUrl string) {
+func plantUmlGen(smx StateMxnIfc, opts *plantUmlGenOpts) (text string, diagramUrl string) {
 	if opts == nil {
 		opts = &plantUmlGenOpts{}
 	}
@@ -106,7 +106,7 @@ skinparam sequenceReferenceAlign left
 					"state.data",
 					specialKeysType(map[string]func(k string, v interface{}, mapName string) string{
 						"enclosedSmx": func(k string, v interface{}, mapName string) string {
-							return mapName + "[" + k + "]: " + fmt.Sprintf("%s (%T)", v.(*StateMxnGeneric).GetName(), v) + `\n`
+							return mapName + "[" + k + "]: " + fmt.Sprintf("%s (%T)", v.(StateMxnIfc).GetName(), v) + `\n`
 						},
 						"timeEnd":   func(k string, v interface{}, mapName string) string { return "" },
 						"timeStart": func(k string, v interface{}, mapName string) string { return "" },
@@ -125,9 +125,9 @@ skinparam sequenceReferenceAlign left
 				return str
 			}
 
-			initialStateName := smx.GetName() + "_0" + smx.historyOfStates[0].GetName()
+			initialStateName := smx.GetName() + "_0" + smx.GetHistoryOfStates()[0].GetName()
 			initialStateName = replace2alphanum(initialStateName)
-			initialStateInputs := smx.historyOfStates[0].GetInputs()
+			initialStateInputs := smx.GetHistoryOfStates()[0].GetInputs()
 			body = "[*] --> " + initialStateName
 			{
 				if iinputsTxt := inputFormatter(initialStateInputs); len(iinputsTxt) > 0 {
@@ -142,25 +142,25 @@ skinparam sequenceReferenceAlign left
 					body += "note as " + smx.GetName() + "\n" + identLinesInString("  ", smxdataFormatter(smxData)) + "\nend note\n"
 				}
 			}
-			for i := 1; i <= len(smx.historyOfStates); i++ {
-				prevStateName := smx.GetName() + "_" + strconv.Itoa(i-1) + "" + smx.historyOfStates[i-1].GetName()
+			for i := 1; i <= len(smx.GetHistoryOfStates()); i++ {
+				prevStateName := smx.GetName() + "_" + strconv.Itoa(i-1) + "" + smx.GetHistoryOfStates()[i-1].GetName()
 				prevStateName = replace2alphanum(prevStateName)
-				prevStateData := smx.historyOfStates[i-1].GetData()
-				prevStateOutputs := smx.historyOfStates[i-1].GetOutputs()
+				prevStateData := smx.GetHistoryOfStates()[i-1].GetData()
+				prevStateOutputs := smx.GetHistoryOfStates()[i-1].GetOutputs()
 				prevStateOutputsStr := outputFormatter(prevStateOutputs)
 				var prevStateErr string
 				{
 					prevStateErr = ""
-					if smx.historyOfStates[i-1].GetError() != nil {
-						prevStateErr = `\nERROR ` + smx.historyOfStates[i-1].GetError().Error()
+					if smx.GetHistoryOfStates()[i-1].GetError() != nil {
+						prevStateErr = `\nERROR ` + smx.GetHistoryOfStates()[i-1].GetError().Error()
 					}
 				}
 				var nextStateName string
 				{
-					if i == len(smx.historyOfStates) {
+					if i == len(smx.GetHistoryOfStates()) {
 						nextStateName = "[*]"
 					} else {
-						nextStateName = smx.GetName() + "_" + strconv.Itoa(i) + smx.historyOfStates[i].GetName()
+						nextStateName = smx.GetName() + "_" + strconv.Itoa(i) + smx.GetHistoryOfStates()[i].GetName()
 						nextStateName = replace2alphanum(nextStateName)
 					}
 				}
@@ -181,7 +181,7 @@ skinparam sequenceReferenceAlign left
 					body += "\n"
 				}
 				if eSmx, ok := prevStateData["enclosedSmx"]; ok {
-					eSmx := eSmx.(*StateMxnGeneric)
+					eSmx := eSmx.(StateMxnIfc)
 					eSmxText, _ := plantUmlGen(eSmx, &plantUmlGenOpts{stripHeaderFooter: true})
 					body += "state " + prevStateName + " ##[bold]green {\n" + identLinesInString("    ", eSmxText) + "\n}\n"
 				}

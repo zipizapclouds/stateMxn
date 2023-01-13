@@ -16,10 +16,10 @@ The state machine will take each state, execute its handlers with state.Activate
   - if there is no error, it will change to "Ok" state which assumed to be sm.transitionsMap[state.GetName()][0], and progress from there
   - if there is an error, it will change to "Nok" state which is assumed to be sm.transitionsMap[state.GetName()][-1]
 
-So overall, this statemachine should take some precreated states, each with 2 transitions and 1-or-more-handlersExec, and will automatically
+So overall, this statemachine should take some precreated states, each with 2 transitions and 0-or-more-handlersExec, and will automatically
 progress the execution from state to state, until it reaches a finalstate, or an error occurs.
 
-The smf.ChangeToInitialStateAndAutoprogressToOtherStates() method should be used to start the state machine, and it will automatically progress through
+The smsf.ChangeToInitialStateAndAutoprogressToOtherStates() method should be used to start the state machine, and it will automatically progress through
 the states, until it reaches a final state or an error occurs.
 
 The smsf.Change() method should not be used - use smsf.ChangeToInitialStateAndAutoprogressToOtherStates() instead.
@@ -32,18 +32,15 @@ type StateMxnSimpleflow struct {
 
 // Will create a new StateMxnSimpleflow, and will automatically progress through the states, until it reaches a final state or an error occurs.
 func NewStateMxnSimpleFlow(smxName string, transitionsMap map[string][]string, precreatedStates map[string]StateIfc) (*StateMxnSimpleflow, error) {
-	smsf := &StateMxnSimpleflow{}
 	// call constructor for StateMxnGeneric
 	smg, err := NewStateMxnGeneric(smxName, transitionsMap, precreatedStates)
-	smsf.StateMxnGeneric = smg
+	smsf := &StateMxnSimpleflow{
+		StateMxnGeneric: smg,
+	}
 	if err != nil {
 		return smsf, err
 	}
 
-	// call constructor for StateMxnSimpleflow
-	// ... (nothing at the moment, but we keep it for future use, if we need to add some more initializations to StateMxnSimpleflow)
-
-	// return smsf
 	return smsf, err
 }
 
@@ -51,7 +48,7 @@ func NewStateMxnSimpleFlow(smxName string, transitionsMap map[string][]string, p
 // It will return the error, if any.
 func (smsf *StateMxnSimpleflow) ChangeToInitialStateAndAutoprogressToOtherStates(initialstateName string) error {
 	hasOkNokTransitionsFunc := func(stateName string) (hasOkNokTransitions bool, OkStatename string, NokStatename string) {
-		tMap, _, _ := smsf.GetTransitionsMap()
+		tMap := smsf.GetTransitionsMap()
 		if len(tMap[stateName]) < 2 {
 			return false, "", ""
 		}
@@ -76,7 +73,12 @@ func (smsf *StateMxnSimpleflow) ChangeToInitialStateAndAutoprogressToOtherStates
 				// this state has no transitions defined, so this is a final-state, return serr
 				return serr
 			}
+			// Save error into state-data and smx-data
+			smsf.GetCurrentState().GetData()["error"] = serr
+			smsf.GetData()["error"] = serr
 			a_state = NokStatename
+			// TODO: finish propagating error, so that next-states can know about it and act accordingly
+			TODO
 		}
 	}
 }

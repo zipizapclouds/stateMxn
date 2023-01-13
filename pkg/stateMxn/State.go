@@ -54,7 +54,7 @@ func (hos HistoryOfStates) DisplayStatesFlow() string {
 		}
 		str += "\n"
 
-		if enclosedSmx, ok := state.GetData()["enclosedSmx"].(*StateMxnGeneric); ok {
+		if enclosedSmx, ok := state.GetData()["enclosedSmx"].(StateMxnIfc); ok {
 			identation := "\t"
 			eStr := "+++++ " + enclosedSmx.GetName() + " +++++\n" +
 				enclosedSmx.GetHistoryOfStates().DisplayStatesFlow() +
@@ -79,6 +79,7 @@ type State struct {
 
 	// data is a map where handlers can store any data meaningfull for the state, and
 	// made publicly accesible with state.GetData()
+	// data["error"]     - handlers should store error here
 	// --- timestamps ---
 	// data["timeStart"]
 	// data["timeEnd"]
