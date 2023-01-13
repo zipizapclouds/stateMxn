@@ -4,3 +4,6 @@ github.com/davecgh/go-spew/spew
 # github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826
 ## explicit
 github.com/mohae/deepcopy
+# github.com/trislu/plantuml v1.0.0
+## explicit; go 1.18
+github.com/trislu/plantuml

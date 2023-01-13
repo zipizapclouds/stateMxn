@@ -164,6 +164,10 @@ func (smg *StateMxnGeneric) GetHistoryOfStates() HistoryOfStates {
 func (smg *StateMxnGeneric) GetData() StateMxnData {
 	return smg.data
 }
+func (smg *StateMxnGeneric) GetPlantUml() (plantUmlText string, plantUmlUrl string) {
+	plantUmlText, plantUmlUrl = plantUmlGen(smg, nil)
+	return plantUmlText, plantUmlUrl
+}
 
 // Returns if stateName is a valid source or destination state (ie, either in the transitions map keys or in the transitions map values)
 func (smg *StateMxnGeneric) verifyIfValidStatename(stateName string) error {

@@ -273,6 +273,11 @@ func stateMxnGeneric_example4() {
 
 	fmt.Println("............................................")
 	fmt.Println(smsf.GetHistoryOfStates().DisplayStatesFlow())
+
+	// Get plantUmlText and plantUmlUrl for smsf
+	plantUmlText, plantUmlUrl := smsf.GetPlantUml()
+	fmt.Println("plantUmlText:\t", plantUmlText)
+	fmt.Println("plantUmlUrl:\t", plantUmlUrl)
 }
 
 func stateMxnGeneric_example5() {
@@ -302,7 +307,7 @@ func stateMxnGeneric_example5() {
 			"Running": {"FinishedOk", "FinishedNok"},
 		}
 		var err error
-		smxInner, err = stateMxn.NewStateMxnGeneric("Example5-SmxInner", transitionsMap, nil)
+		smxInner, err = stateMxn.NewStateMxnGeneric("SmxInner", transitionsMap, nil)
 		logFatalIfError(err)
 	}
 
@@ -347,7 +352,7 @@ func stateMxnGeneric_example5() {
 			})
 	}
 
-	// Create smxOutter, with stateEnclosingSmxInner included in precreatedStates
+	// Create smxOutter, including stateEnclosingSmxInner in precreatedStates
 	var smxOutter *stateMxn.StateMxnGeneric
 	{
 		transitionsMap := map[string][]string{
@@ -355,14 +360,14 @@ func stateMxnGeneric_example5() {
 			"stateEnclosingSmxInner": {"FinishedOk", "FinishedNok"},
 		}
 
-		// Create precreatedStates containing stateEnclosingSmxInner
+		// Create precreatedStates including stateEnclosingSmxInner
 		precreatedStates := map[string]stateMxn.StateIfc{
 			stateEnclosingSmxInner.GetName(): stateEnclosingSmxInner,
 		}
 
 		// Create smxOutter
 		var err error
-		smxOutter, err = stateMxn.NewStateMxnGeneric("Example5-SmxOutter", transitionsMap, precreatedStates)
+		smxOutter, err = stateMxn.NewStateMxnGeneric("SmxOutter", transitionsMap, precreatedStates)
 		logFatalIfError(err)
 	}
 
@@ -389,6 +394,11 @@ func stateMxnGeneric_example5() {
 		fmt.Println("SmxOutter \t currentStateName:", smxOutter.GetCurrentState().GetName()) // "FinishedOk"
 	}
 	fmt.Println(smxOutter.GetHistoryOfStates().DisplayStatesFlow())
+
+	// Get plantUmlText and plantUmlUrl for smxOutter, which also depics smxInner inside stateEnclosingSmxInner
+	plantUmlText, plantUmlUrl := smxOutter.GetPlantUml()
+	fmt.Println("plantUmlText:\t", plantUmlText)
+	fmt.Println("plantUmlUrl:\t", plantUmlUrl)
 }
 
 func main() {

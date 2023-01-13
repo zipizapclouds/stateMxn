@@ -71,6 +71,7 @@ func (hos HistoryOfStates) DisplayStatesFlow() string {
 Begin-handlers   >   Exec-handlers   >  End-handlers
 */
 type State struct {
+	// single-word (without spaces)
 	name string
 
 	inputs  StateInputs  // input from previous state
@@ -236,4 +237,15 @@ func identLinesInString(indent, s string) string {
 		lines = lines[:len(lines)-1]
 	}
 	return strings.Join(append([]string{""}, lines...), indent)
+}
+
+// split str into lines of nchar characters of length, and then indent each line
+func splitAndIdentLines(str string, ncharts int, indent string) string {
+	var lines []string
+	for len(str) > ncharts {
+		lines = append(lines, str[:ncharts])
+		str = str[ncharts:]
+	}
+	lines = append(lines, str)
+	return identLinesInString(indent, strings.Join(lines, "\n"))
 }
