@@ -75,11 +75,10 @@ type State struct {
 
 	inputs  StateInputs  // input from previous state
 	outputs StateOutputs // output to next state. See also state.GetOutputs()
-	err     error        // error from any handler
 
 	// data is a map where handlers can store any data meaningfull for the state, and
 	// made publicly accesible with state.GetData()
-	// data["error"]     - handlers should store error here
+	// data["error"]     - stores error from any handler. Set with s.setError() and read with s.GetError()
 	// --- timestamps ---
 	// data["timeStart"]
 	// data["timeEnd"]
@@ -119,7 +118,12 @@ func (s *State) GetOutputs() StateOutputs {
 	return s.outputs
 }
 func (s *State) GetError() error {
-	return s.err
+	err, ok := s.GetData()["error"]
+	if ok {
+		return err.(error)
+	} else {
+		return nil
+	}
 }
 func (s *State) GetData() StateData {
 	return s.data
@@ -151,7 +155,7 @@ func (s *State) activate(smData StateMxnData, inputs StateInputs) (outputs State
 	for _, handler := range s.handlers["begin"] {
 		err := handler(s.inputs, s.outputs, s.data, smData)
 		if err != nil {
-			s.err = err
+			s.setError(err)
 			return nil, err
 		}
 	}
@@ -161,7 +165,7 @@ func (s *State) activate(smData StateMxnData, inputs StateInputs) (outputs State
 	for _, handler := range s.handlers["exec"] {
 		execErr = handler(s.inputs, s.outputs, s.data, smData)
 		if execErr != nil {
-			s.err = execErr
+			s.setError(execErr)
 			break
 		}
 	}
@@ -170,7 +174,7 @@ func (s *State) activate(smData StateMxnData, inputs StateInputs) (outputs State
 	for _, handler := range s.handlers["end"] {
 		err := handler(s.inputs, s.outputs, s.data, smData)
 		if err != nil {
-			s.err = err
+			s.setError(err)
 			return nil, err
 		}
 	}
@@ -179,6 +183,10 @@ func (s *State) activate(smData StateMxnData, inputs StateInputs) (outputs State
 	}
 
 	return s.outputs, nil
+}
+
+func (s *State) setError(err error) {
+	s.data["error"] = err
 }
 
 // Is returns true if the state name matches the given regexp
@@ -200,14 +208,32 @@ func (s *State) copy() StateIfc {
 	//       dont copy unexported fields - so we need to define our own deepcopy() method
 	// 	     for the type, in the package where the type is defined
 
+	// Creates new map, copies the basic-types but does not deep-copy pointers-to-types (like maps, slices, *structs)
+	copyMapIfc := func(m map[string]interface{}) map[string]interface{} {
+		mCopy := make(map[string]interface{})
+		for k, v := range m {
+			mCopy[k] = v
+		}
+		return mCopy
+	}
+
+	copyMapSliceStateHandler := func(m map[string][]StateHandler) map[string][]StateHandler {
+		mCopy := make(map[string][]StateHandler)
+		for k, v := range m {
+			vCopy := make([]StateHandler, len(v))
+			copy(vCopy, v)
+			mCopy[k] = vCopy
+		}
+		return mCopy
+	}
+
 	// all truct fields, both exported and unexported, need to be copied here
 	stateCopy := &State{
 		name:     s.name,
-		inputs:   s.inputs,   // deepcopy.Copy(s.inputs).(StateInputs),
-		outputs:  s.outputs,  // deepcopy.Copy(s.outputs).(StateOutputs),
-		err:      s.err,      // deepcopy.Copy(s.err).(error),
-		data:     s.data,     // deepcopy.Copy(s.data).(StateData),
-		handlers: s.handlers, // deepcopy.Copy(s.handlers).(map[string][]StateHandler),
+		inputs:   copyMapIfc(s.inputs),                 // deepcopy.Copy(s.inputs).(StateInputs),
+		outputs:  copyMapIfc(s.outputs),                // deepcopy.Copy(s.outputs).(StateOutputs),
+		data:     copyMapIfc(s.data),                   // deepcopy.Copy(s.data).(StateData),
+		handlers: copyMapSliceStateHandler(s.handlers), // deepcopy.Copy(s.handlers).(map[string][]StateHandler),
 	}
 	return stateCopy
 }

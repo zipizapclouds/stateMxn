@@ -50,7 +50,7 @@ States can contain handlers for which they must be precreated.
 A smachine can be enclosed inside another smachine: the outter smachine will have a stateEnclosedSmx with handlers to progress the inner-smachine.
 At any time its possible to show PlanUml diagrams of the history of states of the smachine (including any enclosed smachines)
 
-The best way to understand how to use this package is to follow the examples in main.go
+The best way to understand how to use this package is to follow the examples in main.go - the higher the most complete and simple
 */
 type StateMxnGeneric struct {
 	smxName        string
@@ -59,7 +59,10 @@ type StateMxnGeneric struct {
 	precreatedStates map[string]StateIfc // map[<statename>]*State
 	currentState     StateIfc
 	historyOfStates  HistoryOfStates
-	data             StateMxnData // where different states can store inter-states data
+
+	// data - where different states can store inter-states data
+	// data["error"] is used to store the error of any state. Read with smg.GetError(), set with smg.setError()
+	data StateMxnData
 }
 
 // precreatedStates can be nil
@@ -82,7 +85,7 @@ func NewStateMxnGeneric(smxName string, transitionsMap map[string][]string, prec
 	}
 
 	// Define smg.historyOfStates
-	smg.historyOfStates = make(HistoryOfStates, 0)
+	smg.historyOfStates = HistoryOfStates([]StateIfc{})
 
 	// Define smg.data
 	smg.data = make(StateMxnData)
@@ -90,7 +93,8 @@ func NewStateMxnGeneric(smxName string, transitionsMap map[string][]string, prec
 	return smg, nil
 }
 
-// Changes from current state to nextStateName
+// Changes from current state to nextStateName, and executes nextStageName
+// Any error given by nextStage, will be stored (can be read with smg.GetError()) and returned by this method
 func (smg *StateMxnGeneric) Change(nextStateName string) error {
 	// Note: this function may be called to set initialstate in which case smg.currentState is nil
 	//
@@ -101,7 +105,7 @@ func (smg *StateMxnGeneric) Change(nextStateName string) error {
 	// - creating a nextState, from a copy-or-a-new-state in precreatedStates
 	// - appending nextState to historyOfStates
 	// - setting currentState = nextState
-	// - call currentState.Activate(inputs)
+	// - call currentState.Activate(inputs). Any error returned will be stored with smg.setError() and returned by this function
 	//---------------------------------------------------------------------------------------------
 
 	// Performs safety-validations:
@@ -114,6 +118,7 @@ func (smg *StateMxnGeneric) Change(nextStateName string) error {
 		// - check if nextStateName is a valid stateName
 		err := smg.verifyIfValidStatename(nextStateName)
 		if err != nil {
+			smg.setError(err)
 			return err
 		}
 
@@ -125,11 +130,13 @@ func (smg *StateMxnGeneric) Change(nextStateName string) error {
 			// -- check if currentState is a valid sourcestate
 			err = smg.verifyIfValidSourcestate(smg.currentState.GetName())
 			if err != nil {
+				smg.setError(err)
 				return err
 			}
 			// -- check if nextState is a valid destinationstate, from currentState
 			err = smg.verifyIfValidTransition(smg.currentState.GetName(), nextStateName)
 			if err != nil {
+				smg.setError(err)
 				return err
 			}
 		}
@@ -139,12 +146,13 @@ func (smg *StateMxnGeneric) Change(nextStateName string) error {
 	// - creating a nextState, from a copy-or-a-new-state in precreatedStates
 	nextState, err := smg.getStatecopyFromPrecreatedstatesOrNew(nextStateName)
 	if err != nil {
+		smg.setError(err)
 		return err
 	}
 	oldState := smg.currentState
 	var inputs StateInputs
 	if oldState == nil {
-		// When smg.currentState == nil this function is called to set initialstate
+		// When oldState == nil this function is called to set initialstate
 		inputs = make(StateInputs)
 	} else {
 		oldState_outputs := oldState.GetOutputs()
@@ -156,9 +164,10 @@ func (smg *StateMxnGeneric) Change(nextStateName string) error {
 	// - setting currentState = nextState
 	smg.currentState = nextState
 
-	// - call currentState.Activate(inputs)
+	// - call currentState.Activate(inputs). Any error returned will be stored with smg.setError() and returned by this function
 	_, err = smg.currentState.activate(smg.data, inputs)
 	if err != nil {
+		smg.setError(err)
 		return err
 	}
 
@@ -199,6 +208,14 @@ func (smg *StateMxnGeneric) GetHistoryOfStates() HistoryOfStates {
 
 func (smg *StateMxnGeneric) GetData() StateMxnData {
 	return smg.data
+}
+func (smg *StateMxnGeneric) GetError() error {
+	err, ok := smg.data["error"]
+	if ok {
+		return err.(error)
+	} else {
+		return nil
+	}
 }
 func (smg *StateMxnGeneric) GetPlantUml() (plantUmlText string, plantUmlUrl string) {
 	plantUmlText, plantUmlUrl = plantUmlGen(smg, nil)
@@ -284,4 +301,7 @@ func (smg *StateMxnGeneric) getStatecopyFromPrecreatedstatesOrNew(stateName stri
 		stateCopy := state.copy()
 		return stateCopy, nil
 	}
+}
+func (smg *StateMxnGeneric) setError(err error) {
+	smg.data["error"] = err
 }

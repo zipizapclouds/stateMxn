@@ -23,7 +23,7 @@ func stateMxnGeneric_example1() {
 	//           |------------> FinishedOk
 	//		     |------------> FinishedNok
 	//   |--------------------> FinishedNok
-	fmt.Println("===== stateMxnGeneric_example1 =====")
+	fmt.Println("\n\n\n\n\n===== stateMxnGeneric_example1 =====")
 
 	// Create a StateMxnGeneric
 	transitionsMap := map[string][]string{
@@ -71,7 +71,7 @@ func stateMxnGeneric_example2() {
 	//	|  |                      |                          |
 	//	|   \                      \                          \
 	//	 \---+----------------------+--------------------------+------------------------> FinishedNok
-	fmt.Println("===== stateMxnGeneric_example2 =====")
+	fmt.Println("\n\n\n\n\n===== stateMxnGeneric_example2 =====")
 
 	// Create a StateMxnGeneric
 	transitionsMap := map[string][]string{
@@ -132,7 +132,7 @@ func stateMxnGeneric_example3() {
 	//           |------------> FinishedOk
 	//		     |------------> FinishedNok
 	//   |--------------------> FinishedNok
-	fmt.Println("===== stateMxnGeneric_example3 =====")
+	fmt.Println("\n\n\n\n\n===== stateMxnGeneric_example3 =====")
 
 	transitionsMap := map[string][]string{
 		"Init":    {"Running", "FinishedNok"},
@@ -202,31 +202,31 @@ func stateMxnGeneric_example3() {
 	}
 }
 
+// This example shows how to use StateMxnSimpleflow:
+//   - each state should have 2 (at least) destination-transition-states: "Ok" and "Nok" (except final-states)
+//   - each state can have zero-or-more handlerExec functions
+//
+// When a there is a change to a state, that state handlers are called in order, and then
+// the transition to another state is done automatically based on the return value of the handlers of current-state:
+//   - if all the handlers return nil, the transition is done to the "Ok" state
+//   - if any of the handlers returns an error, the transition is done to the "Nok" state
+//
+// The "Ok" state is considered the stateMxn.GetTransitionMap()[currentStateName][0] state
+// The "Nok" state is considered the stateMxn.GetTransitionMap()[currentStateName][-1] state (where -1 represents the index of last-element)
+//
+// Notice that this example if very similar to example3, but:
+// - uses StateMxnSimpleflow instead of StateMxnGeneric
+// - the states-changes progress automatically, that is done by the state-machine itself (without requiring external calls to sm.Change())
+//
+// ===== States and Tansitions =====
+// Init  --> RunningAlpha --> RunningBeta --> FinishedOk
+// |----------------------------------------> FinishedNok
+//
+//	|------------------------------> FinishedNok
+//	                 |-------------> FinishedNok
 func stateMxnGeneric_example4() {
-	// This example shows how to use StateMxnSimpleflow:
-	//  - each state should have 2 (at least) destination-transition-states: "Ok" and "Nok" (except final-states)
-	//  - each state can have zero-or-more handlerExec functions
-	// When a there is a change to a state, that state handlers are called in order, and then
-	// the transition to another state is done automatically based on the return value of the handlers of current-state:
-	//  - if all the handlers return nil, the transition is done to the "Ok" state
-	//  - if any of the handlers returns an error, the transition is done to the "Nok" state
-	// The "Ok" state is considered the stateMxn.GetTransitionMap()[currentStateName][0] state
-	// The "Nok" state is considered the stateMxn.GetTransitionMap()[currentStateName][-1] state (where -1 represents the index of last-element)
-	//
-	// Notice that this example if very similar to example3, but:
-	// - uses StateMxnSimpleflow instead of StateMxnGeneric
-	// - the states-changes progress automatically, that is done by the state-machine itself (without requiring external calls to sm.Change())
 
-	//
-	// ===== States and Tansitions =====
-	// Init  --> RunningAlpha --> RunningBeta --> FinishedOk
-	// |----------------------------------------> FinishedNok
-	//		     |------------------------------> FinishedNok
-	//		                      |-------------> FinishedNok
-	//
-	//
-
-	fmt.Println("===== stateMxnGeneric_example4 =====")
+	fmt.Println("\n\n\n\n\n===== stateMxnGeneric_example4 =====")
 
 	transitionsMap := map[string][]string{
 		"Init":         {"RunningAlpha", "FinishedNok"}, // first-transition is "Ok" transition, second-transition is "Nok" transition
@@ -263,8 +263,10 @@ func stateMxnGeneric_example4() {
 	// Now lets create the statemachine passing the precreated states
 	smsf, err := stateMxn.NewStateMxnSimpleFlow("Example4", transitionsMap, precreatedStates)
 	logFatalIfError(err)
-	err = smsf.ChangeToInitialStateAndAutoprogressToOtherStates(initialStateName)
-	logFatalIfError(err)
+
+	_ = smsf.ChangeToInitialStateAndAutoprogressToOtherStates(initialStateName)
+	// err = smsf.ChangeToInitialStateAndAutoprogressToOtherStates(initialStateName)
+	//logFatalIfError(err) // ignoring this error on purpose, to see it in the plantuml diagram ;)
 
 	// At this point, the statemachine has already autoprogressed until a final state (FinishedOk or FinishedNok) was reached
 	// Get final state name, which is the current state name
@@ -281,24 +283,26 @@ func stateMxnGeneric_example4() {
 	fmt.Println("plantUmlUrl:\t", plantUmlUrl)
 }
 
+// SmxOutter includes a state stateEnclosingSmxInner, which when executed can progress-states of SmxInner
+//
+// ===== SmxOutter: States and Tansitions =====
+// Init                                           StateMxnGeneric
+//
+//	  |--> stateEnclosingSmxInner
+//	          |------------> FinishedOk
+//			     |------------> FinishedNok
+//	  |--------------------> FinishedNok
+//
+// ===== SmxInner: States and Tansitions =====
+// Init                                          StateMxnGeneric
+//
+//	  |--> Running
+//	          |------------> FinishedOk
+//			     |------------> FinishedNok
+//	  |--------------------> FinishedNok
 func stateMxnGeneric_example5() {
-	// SmxOutter includes a state stateEnclosingSmxInner, which when executed will progress-states of SmxInner
-	//
-	// ===== SmxOutter: States and Tansitions =====
-	// Init
-	//   |--> stateEnclosingSmxInner
-	//           |------------> FinishedOk
-	//		     |------------> FinishedNok
-	//   |--------------------> FinishedNok
-	//
-	// ===== SmxInner: States and Tansitions =====
-	// Init
-	//   |--> Running
-	//           |------------> FinishedOk
-	//		     |------------> FinishedNok
-	//   |--------------------> FinishedNok
 
-	fmt.Println("===== stateMxnGeneric_example5 =====")
+	fmt.Println("\n\n\n\n\n===== stateMxnGeneric_example5 =====")
 
 	// Create smxInner
 	var smxInner *stateMxn.StateMxnGeneric
@@ -451,25 +455,27 @@ func stateMxnGeneric_example5() {
 
 }
 
+// SmxOutter includes a state stateEnclosingSmxInner, which when executed will progress-states of SmxInner
+// In example5 SmxInner is a stateMxnGeneric, but in this example SmxInner is a stateMxnSimpleflow which is much easier :)
+//
+// ===== SmxOutter: States and Tansitions =====
+//
+//	   Init                                            StateMxnGeneric
+//		  |--> stateEnclosingSmxInner
+//		                |------------> FinishedOk
+//				        |------------> FinishedNok
+//		  |--------------------------> FinishedNok
+//
+// ===== SmxInner: States and Tansitions =====
+//
+//	   Init                                            StateMxnSimpleflow
+//		  |--> Running
+//		          |------------> FinishedOk
+//				  |------------> FinishedNok
+//		  |--------------------> FinishedNok
 func stateMxnGeneric_example6() {
-	// SmxOutter includes a state stateEnclosingSmxInner, which when executed will progress-states of SmxInner
-	// In example5 SmxInner is a stateMxnGeneric, but in this example SmxInner is a stateMxnSimpleflow which is much easier :)
-	//
-	// ===== SmxOutter: States and Tansitions =====
-	// Init
-	//   |--> stateEnclosingSmxInner
-	//           |------------> FinishedOk
-	//		     |------------> FinishedNok
-	//   |--------------------> FinishedNok
-	//
-	// ===== SmxInner: States and Tansitions =====
-	// Init
-	//   |--> Running
-	//           |------------> FinishedOk
-	//		     |------------> FinishedNok
-	//   |--------------------> FinishedNok
 
-	fmt.Println("===== stateMxnGeneric_example6 =====")
+	fmt.Println("\n\n\n\n\n===== stateMxnGeneric_example6 =====")
 
 	// Create smxInner
 	var smxInner *stateMxn.StateMxnSimpleflow
@@ -478,7 +484,7 @@ func stateMxnGeneric_example6() {
 			"Init":    {"Running", "FinishedNok"},
 			"Running": {"FinishedOk", "FinishedNok"},
 		}
-		var smxInnerInitState, smxInnerRunningState stateMxn.StateIfc
+		var smxInnerInitState, smxInnerRunningState, smxInnerFinishedNokState stateMxn.StateIfc
 		{
 			smxInnerInitState = stateMxn.NewState("Init")
 			smxInnerInitState.AddHandlerExec(func(inputs stateMxn.StateInputs, outputs stateMxn.StateOutputs, stateData stateMxn.StateData, smachineData stateMxn.StateMxnData) error {
@@ -490,12 +496,20 @@ func stateMxnGeneric_example6() {
 			smxInnerRunningState.AddHandlerExec(func(inputs stateMxn.StateInputs, outputs stateMxn.StateOutputs, stateData stateMxn.StateData, smachineData stateMxn.StateMxnData) error {
 				fmt.Println("... smxInnerRunningState handler: doing some work...")
 				time.Sleep(200 * time.Millisecond)
-				return fmt.Errorf("simulating error to change state to FinishedNok")
+				return fmt.Errorf("simulating error from smxInnerRunningState, to change state to FinishedNok")
 			})
+			smxInnerFinishedNokState = stateMxn.NewState("FinishedNok")
+			smxInnerFinishedNokState.AddHandlerExec(func(inputs stateMxn.StateInputs, outputs stateMxn.StateOutputs, stateData stateMxn.StateData, smachineData stateMxn.StateMxnData) error {
+				fmt.Println("... smxInnerRunningState handler: doing some work...")
+				time.Sleep(200 * time.Millisecond)
+				return nil
+			})
+
 		}
 		precreatedStates := map[string]stateMxn.StateIfc{
-			smxInnerInitState.GetName():    smxInnerInitState,
-			smxInnerRunningState.GetName(): smxInnerRunningState,
+			smxInnerInitState.GetName():        smxInnerInitState,
+			smxInnerRunningState.GetName():     smxInnerRunningState,
+			smxInnerFinishedNokState.GetName(): smxInnerFinishedNokState,
 		}
 		var err error
 		smxInner, err = stateMxn.NewStateMxnSimpleFlow("SmxInnerSf", transitionsMap, precreatedStates)
@@ -550,8 +564,10 @@ func stateMxnGeneric_example6() {
 		// Change state: "stateEnclosingSmxInner"
 		nextState := "stateEnclosingSmxInner"
 		fmt.Printf("SmxOutter \t changing from '%s' --> '%s'\n", smxOutter.GetCurrentState().GetName(), nextState)
-		err = smxOutter.Change(nextState)
-		logFatalIfError(err)
+		_ = smxOutter.Change(nextState)
+		// commented on purpose to let the state-machine progress
+		// err = smxOutter.Change(nextState)
+		// logFatalIfError(err)
 		fmt.Println("SmxOutter \t currentStateName:", smxOutter.GetCurrentState().GetName()) // "stateEnclosingSmxInner"
 
 		// Change state: "FinishedOk"
@@ -597,11 +613,192 @@ func stateMxnGeneric_example6() {
 	}
 }
 
+// SmxOutter includes a state stateEnclosingSmxInner, which when executed will progress-states of SmxInner
+// In example5 SmxInner is a stateMxnGeneric, but in this example SmxInner is a stateMxnSimpleflow which is much easier :)
+// Now in example7, SmxOutter will also be a stateMxnSimpleflow, which is even simpler :)
+//
+// ===== SmxOutter: States and Tansitions =====
+// Init												StateMxnSimpleflow
+//
+//	  |--> stateEnclosingSmxInner
+//	          |------------> FinishedOk
+//			  |------------> FinishedNok
+//	  |--------------------> FinishedNok
+//
+// ===== SmxInner: States and Tansitions =====
+// Init											    StateMxnSimpleflow
+//
+//	  |--> Running
+//	          |------------> FinishedOk
+//			  |------------> FinishedNok
+//	  |--------------------> FinishedNok
+func stateMxnGeneric_example7() {
+	fmt.Println("\n\n\n\n\n\n\n===== stateMxnGeneric_example7 =====")
+
+	// Create smxInner
+	var smxInner *stateMxn.StateMxnSimpleflow
+	{
+		transitionsMap := map[string][]string{
+			"Init":    {"Running", "FinishedNok"},
+			"Running": {"FinishedOk", "FinishedNok"},
+		}
+		var smxInnerRunningState stateMxn.StateIfc
+		{
+			smxInnerRunningState = stateMxn.NewState("Running")
+			smxInnerRunningState.AddHandlerExec(func(inputs stateMxn.StateInputs, outputs stateMxn.StateOutputs, stateData stateMxn.StateData, smachineData stateMxn.StateMxnData) error {
+				time.Sleep(200 * time.Millisecond)
+				return fmt.Errorf("simulating error from smxInnerRunningState, to change state to FinishedNok")
+				// return nil
+			})
+		}
+		precreatedStates := map[string]stateMxn.StateIfc{
+			smxInnerRunningState.GetName(): smxInnerRunningState,
+		}
+		var err error
+		smxInner, err = stateMxn.NewStateMxnSimpleFlow("SmxInnerSf", transitionsMap, precreatedStates)
+		logFatalIfError(err)
+	}
+
+	// Create stateEnclosingSmxInner, with:
+	// - with state data["enclosedSmx"] = smxInner , to pass smxInner to handler
+	// - with handler to progress the state-changes of smxInner
+	var stateEnclosingSmxInner *stateMxn.State
+	{
+		stateEnclosingSmxInner = stateMxn.NewState("stateEnclosingSmxInner")
+		stateEnclosingSmxInner.GetData()["enclosedSmx"] = smxInner
+		stateEnclosingSmxInner.AddHandlerExec(
+			func(inputs stateMxn.StateInputs, outputs stateMxn.StateOutputs, stateData stateMxn.StateData, smData stateMxn.StateMxnData) error {
+				////////////////////////////////////////////
+				// SmxInner: progress the state-changes
+				////////////////////////////////////////////
+				smxInnerSf := stateData["enclosedSmx"].(*stateMxn.StateMxnSimpleflow)
+				err := smxInnerSf.ChangeToInitialStateAndAutoprogressToOtherStates("Init")
+				return err
+			})
+	}
+
+	// Create smxOutter, including stateEnclosingSmxInner in precreatedStates
+	var smxOutter *stateMxn.StateMxnSimpleflow
+	{
+		transitionsMap := map[string][]string{
+			"Init":                   {"stateEnclosingSmxInner", "FinishedNok"},
+			"stateEnclosingSmxInner": {"FinishedOk", "FinishedNok"},
+		}
+
+		// Create precreatedStates including stateEnclosingSmxInner
+		precreatedStates := map[string]stateMxn.StateIfc{
+			stateEnclosingSmxInner.GetName(): stateEnclosingSmxInner,
+		}
+
+		// Create smxOutter
+		var err error
+		smxOutter, err = stateMxn.NewStateMxnSimpleFlow("SmxOutterSf", transitionsMap, precreatedStates)
+		logFatalIfError(err)
+	}
+
+	// smxOutter: progress the state-changes, via StateMxnSimpleflow.ChangeToInitialStateAndAutoprogressToOtherStates()
+	_ = smxOutter.ChangeToInitialStateAndAutoprogressToOtherStates("Init")
+	// commented on purpose to let the state-machine progress to "FinishedNok"
+	// err := smxOutter.ChangeToInitialStateAndAutoprogressToOtherStates("Init")
+	// logFatalIfError(err)
+
+	// Show plantUml diagrams
+	_, smxOutter_plantUmlUrl := smxOutter.GetPlantUml()
+	fmt.Println(">> smxOutter historyOfStates plantUmlUrl: \t", smxOutter_plantUmlUrl)
+}
+
+// SmxOutter includes a state stateEnclosingSmxInner, which when executed will progress-states of SmxInner
+// SmxInner is a StateMxnSimpleflow, easier :)
+// SmxOutter is also a StateMxnSimpleflow, easier :)
+// And now, stateEnclosingSmxInner is created using StateEnclosingSmxSimpleflow, easier too :)
+//
+// ===== SmxOutter: States and Tansitions =====
+// Init												StateMxnSimpleflow
+//
+//	  |--> stateEnclosingSmxInner
+//	          |------------> FinishedOk
+//			  |------------> FinishedNok
+//	  |--------------------> FinishedNok
+//
+// ===== SmxInner: States and Tansitions =====
+// InitO											StateMxnSimpleflow
+//
+//	  |--> Running
+//	          |------------> FinishedOk
+//			  |------------> FinishedNok
+//	  |--------------------> FinishedNok
+func stateMxnGeneric_example8() {
+
+	fmt.Println("\n\n\n\n\n\n\n===== stateMxnGeneric_example8 =====")
+
+	// Create smxInner
+	smxInnerInitialStateName := "Init"
+	var smxInner *stateMxn.StateMxnSimpleflow
+	{
+		transitionsMap := map[string][]string{
+			"Init":    {"Running", "FinishedNok"},
+			"Running": {"FinishedOk", "FinishedNok"},
+		}
+		var smxInnerRunningState *stateMxn.State
+		{
+			smxInnerRunningState = stateMxn.NewState("Running")
+			smxInnerRunningState.AddHandlerExec(func(inputs stateMxn.StateInputs, outputs stateMxn.StateOutputs, stateData stateMxn.StateData, smachineData stateMxn.StateMxnData) error {
+				return fmt.Errorf("simulating error from smxInnerRunningState, to change state to FinishedNok")
+				// return nil
+			})
+		}
+		precreatedStates := map[string]stateMxn.StateIfc{
+			smxInnerRunningState.GetName(): smxInnerRunningState,
+		}
+		var err error
+		smxInner, err = stateMxn.NewStateMxnSimpleFlow("SmxInnerSf", transitionsMap, precreatedStates)
+		logFatalIfError(err)
+	}
+
+	// Create stateEnclosingSmxInner (type *stateMxn.StateEnclosingSmxSimpleflow), using NewStateEnclosingSmxSimpleflow()
+	stateEnclosingSmxInner := stateMxn.NewStateEnclosingSmxSimpleflow("stateEnclosingSmxInner", smxInner, smxInnerInitialStateName)
+
+	// Create smxOutter, including stateEnclosingSmxInner in precreatedStates
+	smxOutterInitialStateName := "Init"
+	var smxOutter *stateMxn.StateMxnSimpleflow
+	{
+		transitionsMap := map[string][]string{
+			"Init":                   {"stateEnclosingSmxInner", "FinishedNok"},
+			"stateEnclosingSmxInner": {"FinishedOk", "FinishedNok"},
+		}
+
+		// Create precreatedStates including stateEnclosingSmxInner
+		precreatedStates := map[string]stateMxn.StateIfc{
+			stateEnclosingSmxInner.GetName(): stateEnclosingSmxInner,
+		}
+
+		// Create smxOutter
+		var err error
+		smxOutter, err = stateMxn.NewStateMxnSimpleFlow("SmxOutterSf", transitionsMap, precreatedStates)
+		logFatalIfError(err)
+	}
+
+	// smxOutter: progress the state-changes, via smxOutter.ChangeToInitialStateAndAutoprogressToOtherStates()
+	_ = smxOutter.ChangeToInitialStateAndAutoprogressToOtherStates(smxOutterInitialStateName)
+	// commented on purpose to let the program continue to show next the plantUml diagram
+	// err := smxOutter.ChangeToInitialStateAndAutoprogressToOtherStates("Init")
+	// logFatalIfError(err)
+
+	// Show plantUml diagrams
+	_, smxInner_plantUmlUrl := smxInner.GetPlantUml()
+	fmt.Println(">> smxInner historyOfStates plantUmlUrl: \t", smxInner_plantUmlUrl)
+
+	_, smxOutter_plantUmlUrl := smxOutter.GetPlantUml()
+	fmt.Println(">> smxOutter historyOfStates plantUmlUrl: \t", smxOutter_plantUmlUrl)
+}
+
 func main() {
-	stateMxnGeneric_example1()
-	stateMxnGeneric_example2()
-	stateMxnGeneric_example3()
-	stateMxnGeneric_example4()
-	stateMxnGeneric_example5()
-	stateMxnGeneric_example6()
+	// stateMxnGeneric_example1()
+	// stateMxnGeneric_example2()
+	// stateMxnGeneric_example3()
+	// stateMxnGeneric_example4()
+	// stateMxnGeneric_example5()
+	// stateMxnGeneric_example6()
+	// stateMxnGeneric_example7()
+	stateMxnGeneric_example8()
 }

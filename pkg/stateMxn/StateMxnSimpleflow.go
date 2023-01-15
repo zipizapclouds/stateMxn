@@ -24,13 +24,13 @@ the states, until it reaches a final state or an error occurs.
 
 The smsf.Change() method should not be used - use smsf.ChangeToInitialStateAndAutoprogressToOtherStates() instead.
 
-Examples: see main.go example4
+Examples: see main.go example4, .. and example8
 */
 type StateMxnSimpleflow struct {
 	*StateMxnGeneric
 }
 
-// Will create a new StateMxnSimpleflow, and will automatically progress through the states, until it reaches a final state or an error occurs.
+// Will create a new StateMxnSimpleflow
 func NewStateMxnSimpleFlow(smxName string, transitionsMap map[string][]string, precreatedStates map[string]StateIfc) (*StateMxnSimpleflow, error) {
 	// call constructor for StateMxnGeneric
 	smg, err := NewStateMxnGeneric(smxName, transitionsMap, precreatedStates)
@@ -44,8 +44,7 @@ func NewStateMxnSimpleFlow(smxName string, transitionsMap map[string][]string, p
 	return smsf, err
 }
 
-// This function will automatically progress through the states, until it reaches a final state or an error occurs.
-// It will return the error, if any.
+// This function will automatically progress through the states, until it reaches a final state or an error occurs
 func (smsf *StateMxnSimpleflow) ChangeToInitialStateAndAutoprogressToOtherStates(initialstateName string) error {
 	hasOkNokTransitionsFunc := func(stateName string) (hasOkNokTransitions bool, OkStatename string, NokStatename string) {
 		tMap := smsf.GetTransitionsMap()
@@ -64,21 +63,22 @@ func (smsf *StateMxnSimpleflow) ChangeToInitialStateAndAutoprogressToOtherStates
 		// NOTE: serr may come from handler-error or another-error. We assume its a handler-error without additional checks
 		if serr == nil {
 			if !hasOkNokTransitions {
-				// this state has no transitions defined, so this is a final-state, return nil
-				return nil
+				// this state has no transitions defined, so this is a final-state
+				// return smfs.GetError(), which may be nil or might be an error set in a previous state
+				return smsf.GetError()
 			}
 			a_state = OkStatename
 		} else {
+			// serr is not nil, Change returned error
+
+			// Save error into smx-data
+			smsf.setError(serr)
 			if !hasOkNokTransitions {
-				// this state has no transitions defined, so this is a final-state, return serr
-				return serr
+				// this state has no transitions defined, so this is a final-state
+				// return smfs.GetError(), which in this case will be serr just stored before
+				return smsf.GetError()
 			}
-			// Save error into state-data and smx-data
-			smsf.GetCurrentState().GetData()["error"] = serr
-			smsf.GetData()["error"] = serr
 			a_state = NokStatename
-			// TODO: finish propagating error, so that next-states can know about it and act accordingly
-			TODO
 		}
 	}
 }

@@ -14,6 +14,7 @@ type plantUmlGenOpts struct {
 
 // opts can be nil
 func plantUmlGen(smx StateMxnIfc, opts *plantUmlGenOpts) (text string, diagramUrl string) {
+
 	if opts == nil {
 		opts = &plantUmlGenOpts{}
 	}
@@ -110,6 +111,9 @@ skinparam sequenceReferenceAlign left
 						},
 						"timeEnd":   func(k string, v interface{}, mapName string) string { return "" },
 						"timeStart": func(k string, v interface{}, mapName string) string { return "" },
+						"error": func(k string, v interface{}, mapName string) string {
+							return mapName + "[" + k + "]: " + fmt.Sprintf("%s", v.(error).Error()) + `\n`
+						},
 					}),
 					`\n`,
 				)
@@ -119,7 +123,11 @@ skinparam sequenceReferenceAlign left
 				str := mapStringInterfaceFormatter(
 					d,
 					"smx.data",
-					specialKeysType(map[string]func(k string, v interface{}, mapName string) string{}),
+					specialKeysType(map[string]func(k string, v interface{}, mapName string) string{
+						"error": func(k string, v interface{}, mapName string) string {
+							return mapName + "[" + k + "]: " + fmt.Sprintf("%s", v.(error).Error()) + `\n`
+						},
+					}),
 					"\n",
 				)
 				return str
