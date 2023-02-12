@@ -5,7 +5,7 @@ import "fmt"
 /*
 StateMxnSimpleflow
 
-This is a special implementation of a statemxn, where each state should have 2 trasitions:
+This is a special implementation of a statemxn, where each state should have 2 transitions:
 
 	[0] "Ok" state
 	[-1] "Nok" state

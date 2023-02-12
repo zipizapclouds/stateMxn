@@ -707,14 +707,13 @@ func stateMxnGeneric_example7() {
 	fmt.Println(">> smxOutter historyOfStates plantUmlUrl: \t", smxOutter_plantUmlUrl)
 }
 
-// SmxOutter includes a state stateEnclosingSmxInner, which when executed will progress-states of SmxInner
 // SmxInner is a StateMxnSimpleflow, easier :)
 // SmxOutter is also a StateMxnSimpleflow, easier :)
+// SmxOutter includes a state stateEnclosingSmxInner, which when executed will progress-states of SmxInner
 // And now, stateEnclosingSmxInner is created using StateEnclosingSmxSimpleflow, easier too :)
 //
 // ===== SmxOutter: States and Tansitions =====
 // Init												StateMxnSimpleflow
-//
 //	  |--> stateEnclosingSmxInner
 //	          |------------> FinishedOk
 //			  |------------> FinishedNok
@@ -722,7 +721,6 @@ func stateMxnGeneric_example7() {
 //
 // ===== SmxInner: States and Tansitions =====
 // InitO											StateMxnSimpleflow
-//
 //	  |--> Running
 //	          |------------> FinishedOk
 //			  |------------> FinishedNok
