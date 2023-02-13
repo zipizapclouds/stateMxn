@@ -790,6 +790,94 @@ func stateMxnGeneric_example8() {
 	fmt.Println(">> smxOutter historyOfStates plantUmlUrl: \t", smxOutter_plantUmlUrl)
 }
 
+//
+// TODO: doc me
+//
+func stateMxnGeneric_example9() {
+
+	fmt.Println("\n\n\n\n\n\n\n===== stateMxnGeneric_example9 =====")
+
+	smxInner, err := stateMxn.NewStateMxnTrainFlow(
+		"SmxInnerTf",
+		[]stateMxn.TrainMinistate{
+			{
+				"Check", func(inputs stateMxn.StateInputs, outputs stateMxn.StateOutputs, stateData stateMxn.StateData, smachineData stateMxn.StateMxnData) error {
+					return nil
+				},
+			},
+			{
+				"Run", func(inputs stateMxn.StateInputs, outputs stateMxn.StateOutputs, stateData stateMxn.StateData, smachineData stateMxn.StateMxnData) error {
+					return nil
+				},
+			},
+		})
+	logFatalIfError(err)
+
+	/*
+		// Create smxInner
+		var smxInner *stateMxn.StateMxn
+
+		smxInnerInitialStateName := "Init"
+		var smxInner *stateMxn.StateMxnSimpleflow
+		{
+			transitionsMap := map[string][]string{
+				"Init":    {"Running", "FinishedNok"},
+				"Running": {"FinishedOk", "FinishedNok"},
+			}
+			var smxInnerRunningState *stateMxn.State
+			{
+				smxInnerRunningState = stateMxn.NewState("Running")
+				smxInnerRunningState.AddHandlerExec(func(inputs stateMxn.StateInputs, outputs stateMxn.StateOutputs, stateData stateMxn.StateData, smachineData stateMxn.StateMxnData) error {
+					return fmt.Errorf("simulating error from smxInnerRunningState, to change state to FinishedNok")
+					// return nil
+				})
+			}
+			precreatedStates := map[string]stateMxn.StateIfc{
+				smxInnerRunningState.GetName(): smxInnerRunningState,
+			}
+			var err error
+			smxInner, err = stateMxn.NewStateMxnSimpleFlow("SmxInnerSf", transitionsMap, precreatedStates)
+			logFatalIfError(err)
+		}
+	*/
+
+	// Create stateEnclosingSmxInner (type *stateMxn.StateEnclosingSmxSimpleflow), using NewStateEnclosingSmxSimpleflow()
+	stateEnclosingSmxInner := stateMxn.NewStateEnclosingSmxSimpleflow("stateEnclosingSmxInner", smxInner, smxInnerInitialStateName)
+
+	// Create smxOutter, including stateEnclosingSmxInner in precreatedStates
+	smxOutterInitialStateName := "Init"
+	var smxOutter *stateMxn.StateMxnSimpleflow
+	{
+		transitionsMap := map[string][]string{
+			"Init":                   {"stateEnclosingSmxInner", "FinishedNok"},
+			"stateEnclosingSmxInner": {"FinishedOk", "FinishedNok"},
+		}
+
+		// Create precreatedStates including stateEnclosingSmxInner
+		precreatedStates := map[string]stateMxn.StateIfc{
+			stateEnclosingSmxInner.GetName(): stateEnclosingSmxInner,
+		}
+
+		// Create smxOutter
+		var err error
+		smxOutter, err = stateMxn.NewStateMxnSimpleFlow("SmxOutterSf", transitionsMap, precreatedStates)
+		logFatalIfError(err)
+	}
+
+	// smxOutter: progress the state-changes, via smxOutter.ChangeToInitialStateAndAutoprogressToOtherStates()
+	_ = smxOutter.ChangeToInitialStateAndAutoprogressToOtherStates(smxOutterInitialStateName)
+	// commented on purpose to let the program continue to show next the plantUml diagram
+	// err := smxOutter.ChangeToInitialStateAndAutoprogressToOtherStates("Init")
+	// logFatalIfError(err)
+
+	// Show plantUml diagrams
+	_, smxInner_plantUmlUrl := smxInner.GetPlantUml()
+	fmt.Println(">> smxInner historyOfStates plantUmlUrl: \t", smxInner_plantUmlUrl)
+
+	_, smxOutter_plantUmlUrl := smxOutter.GetPlantUml()
+	fmt.Println(">> smxOutter historyOfStates plantUmlUrl: \t", smxOutter_plantUmlUrl)
+}
+
 func main() {
 	// stateMxnGeneric_example1()
 	// stateMxnGeneric_example2()

@@ -1,7 +1,5 @@
 package stateMxn
 
-import "fmt"
-
 type StateEnclosingSmxSimpleflow struct {
 	*State
 }
@@ -15,7 +13,6 @@ func NewStateEnclosingSmxSimpleflow(stateName string, smxInnerSf *StateMxnSimple
 	se.AddHandlerExec(
 		func(inputs StateInputs, outputs StateOutputs, stateData StateData, smData StateMxnData) error {
 			// smxInner: progress the state-changes
-			fmt.Println("HHHHHHHHHEEEEEEEEEEEEEERRRRRRRRRRREEEEEEEEEEEEE")
 			smxInnerSf := stateData["enclosedSmx"].(*StateMxnSimpleflow)
 			err := smxInnerSf.ChangeToInitialStateAndAutoprogressToOtherStates(smxInitialStateName)
 			return err
